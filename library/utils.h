@@ -1,5 +1,4 @@
 #pragma once
-
 #include <windows.h>
 #include <tchar.h>
 #include <io.h>
@@ -11,40 +10,50 @@
 
 #ifndef UTILS_SO2_TP_H
 #define UTILS_SO2_TP_H
-
 #endif
 
 #define PIPE_NAME_CLIENTS TEXT("\\\\.\\pipe\\pipeClientes")
-#define MAX_TAM 50
-
-#define MAX_USERS 20
 #define REGISTRY_PATH TEXT("SO2\\TrabalhoPratico\\")
-#define DEFAULT_VALUE_NCLIENTES 5
-#define SHARED_MEMORY_NAME TEXT("sharedMemoryBolsa")
+#define SHARED_MEMORY_NAME TEXT("sharedMemoryBolsa") 
 
+#define MUTEX_NAME TEXT("mutexBolsa")
+
+#define MAX_TAM_BUFFER 10
+#define DEFAULT_VALUE_NCLIENTES 5
+#define MAX_TAM 100
+#define MAX_USERS 20
 
 typedef struct {
-	char username[20];
+	char username[MAX_TAM];
 	char password[20];
 	float saldo;
+	//Acoes carteira[40]; //........ associar as acoes de compra
 } User;
+User users[MAX_USERS];
 
 typedef struct {
 	User users[MAX_USERS];
 	int numUsers;
 } Bolsa;
 
-
-#define MAX_TAM_BUFFER 10
 typedef struct {
-	TCHAR message[MAX_TAM];
-}BufferCell;
+	char tipo;
+	//Empresa *empresa;
+	User *user;
+	int numAcoes;
+	float precoAcoes;
+} Transacoes;
 
 typedef struct {
-	DWORD wP;
-	DWORD rP;
+	char empresa[20];
+	int qtAcoes;
+	float qtAcoesEmpresa;
+}Acoes;
 
-	BufferCell buffer[MAX_TAM_BUFFER];
-}BufferCircular;
 
+typedef struct {
+	char nome[20];
+	float precoAcao;
+	int acoesDisponiveis;
+}Empresa;
 

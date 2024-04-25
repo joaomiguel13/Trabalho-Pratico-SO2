@@ -22,38 +22,55 @@
 #define DEFAULT_VALUE_NCLIENTES 5
 #define MAX_TAM 100
 #define MAX_USERS 20
+#define MAX_EMPRESAS 30
 
 typedef struct {
-	char username[MAX_TAM];
-	char password[20];
+	TCHAR username[MAX_TAM];
+	TCHAR password[20];
 	float saldo;
 	//Acoes carteira[40]; //........ associar as acoes de compra
 } User;
+
 User users[MAX_USERS];
 
 typedef struct {
 	User users[MAX_USERS];
-	int numUsers;
+	DWORD numUsers;
 } Bolsa;
 
 typedef struct {
-	char tipo;
+	TCHAR tipo;
 	//Empresa *empresa;
 	User *user;
-	int numAcoes;
+	DWORD numAcoes;
 	float precoAcoes;
 } Transacoes;
 
 typedef struct {
-	char empresa[20];
-	int qtAcoes;
+	TCHAR empresa[20];
+	DWORD qtAcoes;
 	float qtAcoesEmpresa;
 }Acoes;
 
 
 typedef struct {
-	char nome[20];
+	TCHAR nome[20];
 	float precoAcao;
-	int acoesDisponiveis;
+	DWORD acoesDisponiveis;
 }Empresa;
+
+typedef struct {
+	Empresa empresas[MAX_EMPRESAS];
+	int numEmpresas;
+	Transacoes lastTransacao;
+}SharedData;
+
+typedef struct {
+	HANDLE hMapFile;
+	HANDLE hMutexUpdateBoard;
+	HANDLE hEventUpdateBoard; //??
+	HANDLE hEventInPause; //??
+
+	SharedData* sharedData;
+}SharedMemory;
 

@@ -3,7 +3,7 @@
 
 //Verificar se já está uma bolsa em execução
 BOOL isBolsaRunning() {
-	HANDLE hMutex = CreateMutex(NULL, FALSE, TEXT("BolsaMutex"));
+	HANDLE hMutex = CreateMutex(NULL, FALSE, MUTEX_NAME);
 
 	if (GetLastError() == ERROR_ALREADY_EXISTS) {
 		CloseHandle(hMutex);
@@ -66,6 +66,55 @@ void writeRegistry(const TCHAR* keyName, DWORD value) {
 	}
 	else {
 		_tprintf("\nErro ao criar/abrir a chave do Registry! [%d]", GetLastError());
+	}
+}
+
+void initSharedMemory_Sync(SharedMemory *sharedMemory) {
+	sharedMemory->sharedData->numEmpresas = 0;
+	sharedMemory->sharedData->lastTransacao.numAcoes = 0;
+	sharedMemory->sharedData->lastTransacao.precoAcoes = 0;
+	sharedMemory->sharedData->lastTransacao.tipo = ' ';
+	sharedMemory->sharedData->lastTransacao.user = NULL;
+
+
+	sharedMemory->hMapFile = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(SharedData), TEXT("hMapsharedMemory"));
+	if (sharedMemory->hMapFile == NULL) {
+		_tprintf(TEXT("ERROR: CreateFileMapping [%d]!\n"), GetLastError());
+		return FALSE;
+	}
+
+	sharedMemory->sharedData = MapViewOfFile(sharedMemory->hMapFile, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(SharedData));
+	if (sharedMemory->sharedData == NULL) {
+		_tprintf(TEXT("ERROR: MapViewOfFile [%d]!\n"), GetLastError());
+		CloseHandle(sharedMemory->hMapFile);
+		return FALSE;
+	}
+
+	sharedMemory->hMutexUpdateBoard = CreateMutex(NULL, FALSE, TEXT("hMutexUpdateBoard"));
+	if (sharedMemory->hMutexUpdateBoard == NULL) {
+		_tprintf(TEXT("ERROR: CreateMutex [%d]!\n"), GetLastError());
+		UnmapViewOfFile(sharedMemory->sharedData);
+		CloseHandle(sharedMemory->hMapFile);
+		return FALSE;
+	}
+
+	sharedMemory->hEventUpdateBoard = CreateEvent(NULL, TRUE, FALSE, TEXT("hEventUpdateBoard"));
+	if (sharedMemory->hEventUpdateBoard == NULL) {
+		_tprintf(TEXT("ERROR: CreateEvent [%d]!\n"), GetLastError());
+		UnmapViewOfFile(sharedMemory->sharedData);
+		CloseHandle(sharedMemory->hMapFile);
+		CloseHandle(sharedMemory->hMutexUpdateBoard);
+		return FALSE;
+	}
+	
+	sharedMemory->hEventInPause = CreateEvent(NULL, TRUE, FALSE, TEXT("hEventInPause"));
+	if (sharedMemory->hEventInPause == NULL) {
+		_tprintf(TEXT("ERROR: CreateEvent [%d]!\n"), GetLastError());
+		UnmapViewOfFile(sharedMemory->sharedData);
+		CloseHandle(sharedMemory->hMapFile);
+		CloseHandle(sharedMemory->hMutexUpdateBoard);
+		CloseHandle(sharedMemory->hEventUpdateBoard);
+		return FALSE;
 	}
 }
 

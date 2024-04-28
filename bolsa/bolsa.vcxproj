@@ -130,6 +130,7 @@
     <ClCompile Include="bolsa.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="bolsa.h" />
     <ClInclude Include="threads.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

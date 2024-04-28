@@ -24,6 +24,7 @@
     <ProjectGuid>{85a1036f-2410-49a6-bca5-a8b0e3d3958e}</ProjectGuid>
     <RootNamespace>library</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>utils</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -126,9 +127,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="library.c" />
-  </ItemGroup>
   <ItemGroup>
     <ClInclude Include="utils.h" />
   </ItemGroup>

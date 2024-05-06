@@ -128,9 +128,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="board.h" />
+    <ClInclude Include="threads.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="board.c" />
+    <ClCompile Include="threads.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

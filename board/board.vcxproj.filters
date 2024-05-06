@@ -18,9 +18,15 @@
     <ClInclude Include="board.h">
       <Filter>Arquivos de Cabeçalho</Filter>
     </ClInclude>
+    <ClInclude Include="threads.h">
+      <Filter>Arquivos de Cabeçalho</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="board.c">
+      <Filter>Arquivos de Origem</Filter>
+    </ClCompile>
+    <ClCompile Include="threads.c">
       <Filter>Arquivos de Origem</Filter>
     </ClCompile>
   </ItemGroup>

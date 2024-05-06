@@ -16,9 +16,11 @@
 #define REGISTRY_PATH TEXT("SO2\\TrabalhoPratico\\")
 #define SHARED_MEMORY_NAME TEXT("sharedMemoryBolsa") 
 
+#define EMPRESAS_FILE TEXT("empresas.txt")
+
 #define MUTEX_NAME TEXT("mutexBolsa")
 
-#define MAX_TAM_BUFFER 10
+#define MAX_TAM_BUFFER 1024
 #define DEFAULT_VALUE_NCLIENTES 5
 #define MAX_TAM 100
 #define MAX_USERS 20
@@ -39,9 +41,15 @@ typedef struct {
 } Bolsa;
 
 typedef struct {
+	TCHAR nome[100];
+	float precoAcao;
+	DWORD acoesDisponiveis;
+}Empresa;
+
+typedef struct {
 	TCHAR tipo;
-	//Empresa *empresa;
-	User *user;
+	Empresa *empresa;
+	User* user;
 	DWORD numAcoes;
 	float precoAcoes;
 } Transacoes;
@@ -52,25 +60,30 @@ typedef struct {
 	float qtAcoesEmpresa;
 }Acoes;
 
-
-typedef struct {
-	TCHAR nome[20];
-	float precoAcao;
-	DWORD acoesDisponiveis;
-}Empresa;
-
 typedef struct {
 	Empresa empresas[MAX_EMPRESAS];
-	int numEmpresas;
+	int numEmpresas; //contador de empresas
 	Transacoes lastTransacao;
 }SharedData;
 
 typedef struct {
 	HANDLE hMapFile;
 	HANDLE hMutexUpdateBoard;
-	HANDLE hEventUpdateBoard; //??
-	HANDLE hEventInPause; //??
+	HANDLE hEventUpdateBoard;
+	HANDLE hEventRunning;
+
 
 	SharedData* sharedData;
 }SharedMemory;
 
+#define N_THREADS_BOLSA 2
+typedef struct {
+	HANDLE hThreads[N_THREADS_BOLSA];
+	HANDLE hEventCloseAllThreads;
+}ThreadsBolsa;
+
+#define N_THREADS_BOARD 2
+typedef struct {
+	HANDLE hThreads[N_THREADS_BOARD];
+	HANDLE hEventCloseAllThreads;
+}ThreadsBoard;

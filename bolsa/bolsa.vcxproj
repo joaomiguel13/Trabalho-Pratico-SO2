@@ -128,6 +128,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="bolsa.c" />
+    <ClCompile Include="threads.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="bolsa.h" />

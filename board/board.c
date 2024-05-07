@@ -73,7 +73,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 	_setmode(_fileno(stderr), _O_WTEXT);
 #endif
 
-	if (argc < 2) {
+	if (argc != 2) {
 		_tprintf(TEXT("Número de argumentos inválido! Espicifique o numero de empresas(MAX 10)!\n"));
 		return;
 	}

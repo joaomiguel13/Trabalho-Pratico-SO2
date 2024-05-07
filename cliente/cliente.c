@@ -135,7 +135,7 @@ int _tmain(int argc, LPTSTR argv[]) {
             else if (_tcsicmp(argumentos[0], TEXT("buy")) == 0 && nArgs == 2) {
                 utilizador.tipo = 2;
                 wcscpy_s(utilizador.empresa, _countof(utilizador.empresa), argumentos[1]);
-                wcscpy_s(utilizador.qtAcoes, sizeof(utilizador.qtAcoes), argumentos[2]);
+                //wcscpy_s(utilizador.qtAcoes, sizeof(utilizador.qtAcoes), argumentos[2]); esta a dar erro por causa do sizeof
                 Envia(hPipe);
                 Recebe(hPipe);
 

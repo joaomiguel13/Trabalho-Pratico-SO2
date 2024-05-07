@@ -297,6 +297,10 @@ DWORD WINAPI InstanciaThread(LPVOID lpvParam) {
 			{
 				if (_tcscmp(utilizador.username, users[i].username) == 0 && _tcscmp(utilizador.password, users[i].password) == 0) {
 					utilizador.login = TRUE;
+					utilizador.saldo = users[i].saldo;
+					_tprintf(_T("Username: %s\n"), utilizador.username);
+					_tprintf(_T("Password: %s\n"), utilizador.password);
+					WriteClienteASINC(hPipe);
 					break;
 				}
 				i++;
@@ -305,15 +309,35 @@ DWORD WINAPI InstanciaThread(LPVOID lpvParam) {
 				_tprintf(_T("Invalid username or password\n"));
 			}
 		}
+		else if(utilizador.tipo == 1){
+			//MANDAR A LISTA DE EMPRESAS
+			WriteClienteASINC(hPipe);
+			
+		}else if(utilizador.tipo == 2) {
+			//fazer a compra de acoes
+			WriteClienteASINC(hPipe);
+			
+		}else if(utilizador.tipo == 3) {
+			//fazer a venda de acoes
+			WriteClienteASINC(hPipe);
 
-		_tprintf(_T("Username: %s\n"), utilizador.username);
-		_tprintf(_T("Password: %s\n"), utilizador.password);
+		}else if(utilizador.tipo == 4) {
+			//ver o saldo
+			int i=0;
+			while (i < MAX_USERS)
+			{
+				if (_tcscmp(utilizador.username, users[i].username) == 0 && _tcscmp(utilizador.password, users[i].password) == 0) {
+					utilizador.saldo = users[i].saldo;
+					break;
+				}
+				i++;
+			}
+			WriteClienteASINC(hPipe);
+		}
 
 		// Processamento do pedido
 
 		//numResp = broadcastCliented(Resposta);
-
-		WriteClienteASINC(hPipe);
 	}
 	FlushFileBuffers(hPipe);
 	DisconnectNamedPipe(hPipe);

@@ -12,10 +12,14 @@
 #define Msg_Sz sizeof(utilizador)
 
 typedef struct {
+	int tipo;
 	TCHAR username[MAX_TAM];
 	TCHAR password[20];
 	double saldo;
 	BOOL login;
+	TCHAR empresa[20];
+	DWORD qtAcoes;
+	float qtAcoesEmpresa;
 }NovosUsers;
 NovosUsers utilizador;
 

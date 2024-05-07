@@ -106,42 +106,8 @@ int _tmain(int argc, LPTSTR argv[]) {
                 Sleep(1000);
                 Recebe(hPipe);
                 
-                /*HANDLE ReadReady, WriteReady;
-                WriteReady = CreateEvent(NULL, TRUE, FALSE, NULL);
-                ReadReady = CreateEvent(NULL, TRUE, FALSE, NULL);
-                // Configurar opera  o overlapped para escrita
-                ZeroMemory(&OvW, sizeof(OvW));
-                ResetEvent(WriteReady);
-                OvW.hEvent = WriteReady;
-                fSuccess = WriteFile(hPipe, &utilizador, Msg_Sz, &cbBytesWrite, &OvW);
-                if (!fSuccess) {
-                    _tprintf(TEXT("[ERRO] Falha ao enviar a mensagem! (WriteFile)\n"));
-                    return -1;
-                }
-                WaitForSingleObject(WriteReady, INFINITE);
-                _tprintf(TEXT("[CLIENTE] Mensagem enviada ao servidor!\n"));
-                // Configurar opera  o overlapped para leitura
-                ZeroMemory(&OvR, sizeof(OvR));
-                ResetEvent(ReadReady);
-                OvR.hEvent = ReadReady;
-                fSuccess = ReadFile(hPipe, &utilizador, Msg_Sz, &cbBytesRead, &OvR);
-                if (!fSuccess && GetLastError() != ERROR_IO_PENDING) {
-                    _tprintf(TEXT("[ERRO] Falha ao receber a mensagem! (ReadFile)\n"));
-                    return -1;
-                }
-                // Verifica se a opera  o est  pendente (n o h  dados imediatamente dispon veis)
-                if (!fSuccess) {
-                    // A opera  o est  pendente, aguardar at  que ela seja conclu da
-                    WaitForSingleObject(ReadReady, INFINITE);
-                    // Verifica se a opera  o foi conclu da com sucesso
-                    fSuccess = GetOverlappedResult(hPipe, &OvR, &cbBytesRead, FALSE);
-                    if (!fSuccess) {
-                        _tprintf(TEXT("[ERRO] Falha na leitura do pipe! (GetOverlappedResult)\n"));
-                        return -1;
-                    }
-                }*/
                 if (utilizador.login == TRUE) {
-                    _tprintf(TEXT("Login efetuado com sucesso!\nBem vindo: %s\t Saldo:%d"), utilizador.username,utilizador.saldo);
+                    _tprintf(TEXT("Login efetuado com sucesso!\nBem vindo: %s\t Saldo:%.2f"), utilizador.username,utilizador.saldo);
                 }
                 else {
                     _tprintf(TEXT("Invalid username or password\n"));
@@ -161,24 +127,33 @@ int _tmain(int argc, LPTSTR argv[]) {
             }
             nArgs -= 1;
             if (_tcsicmp(argumentos[0], TEXT("listc")) == 0 && nArgs == 0) {
- 
-
+                utilizador.tipo = 1;
+                Envia(hPipe);
+                Recebe(hPipe);
                 _tprintf(TEXT("listc\n"));
             }
             else if (_tcsicmp(argumentos[0], TEXT("buy")) == 0 && nArgs == 2) {
-
+                utilizador.tipo = 2;
+                wcscpy_s(utilizador.empresa, _countof(utilizador.empresa), argumentos[1]);
+                wcscpy_s(utilizador.qtAcoes, sizeof(utilizador.qtAcoes), argumentos[2]);
+                Envia(hPipe);
+                Recebe(hPipe);
 
                 _tprintf(TEXT("buy\n"));
             }
             else if (_tcsicmp(argumentos[0], TEXT("sell")) == 0 && nArgs == 2) {
-
-                //Envia(hPipe, WriteReady, ReadReady);
+                utilizador.tipo = 3;
+                wcscpy_s(utilizador.empresa, _countof(utilizador.empresa), argumentos[1]);
+               // wcscpy_s(utilizador.qtAcoes, sizeof(utilizador.qtAcoes), argumentos[2]); esta a dar erro por causa do sizeof
+                Envia(hPipe);
+                Recebe(hPipe);
                 _tprintf(TEXT("sell\n"));
             }
             else if (_tcsicmp(argumentos[0], TEXT("balance")) == 0 && nArgs == 0) {
-
-                //Envia(hPipe, WriteReady, ReadReady);
-                _tprintf(TEXT("balance\n"));
+                utilizador.tipo = 4;
+                Envia(hPipe);
+                Recebe(hPipe);
+                _tprintf_s(TEXT("balance: %.2f\n"),utilizador.saldo);
             }
             else if (_tcsicmp(argumentos[0], TEXT("exit")) != 0) {
                 _tprintf(TEXT("Comando inv lido\n"));

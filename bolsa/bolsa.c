@@ -229,14 +229,11 @@ void readFileEmpresas(SharedMemory* sharedMemory) {
 		TCHAR* next_line = NULL;
 		TCHAR* line = _tcstok_s(buffer, TEXT("\n"), &next_line);
 		while (line != NULL) {
-			TCHAR* nomeEmpresa = NULL;
-			TCHAR* numAcoes = NULL;
-			TCHAR* precoAcao = NULL;
 			TCHAR* next_param = NULL;
-
-			nomeEmpresa = _tcstok_s(line, TEXT(" "), &next_param);
-			numAcoes = _tcstok_s(NULL, TEXT(" "), &next_param);
-			precoAcao = _tcstok_s(NULL, TEXT(" "), &next_param);
+			TCHAR* nomeEmpresa = _tcstok_s(line, TEXT(" "), &next_param);
+			TCHAR* numAcoes = _tcstok_s(NULL, TEXT(" "), &next_param);
+			TCHAR* precoAcao = _tcstok_s(NULL, TEXT(" "), &next_param);
+			
 
 			_tprintf(TEXT("Nome: %hs\n"), nomeEmpresa);
 			_tprintf(TEXT("Ações: %s\n"), numAcoes);

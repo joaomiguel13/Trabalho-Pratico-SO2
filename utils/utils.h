@@ -25,6 +25,7 @@
 #define MAX_TAM 100
 #define MAX_USERS 20
 #define MAX_EMPRESAS 30
+#define Msg_Sz sizeof(utilizador)
 
 typedef struct {
 	TCHAR username[MAX_TAM];
@@ -71,7 +72,6 @@ typedef struct {
 	HANDLE hMutexUpdateBoard;
 	HANDLE hEventUpdateBoard;
 	HANDLE hEventRunning;
-
 
 	SharedData* sharedData;
 }SharedMemory;

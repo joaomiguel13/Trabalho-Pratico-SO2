@@ -1,5 +1,6 @@
 #include "bolsa.h"
 #include "threads.h"
+#include "../utils/utils.h"
 
 //Verificar se já está uma bolsa em execução
 BOOL isBolsaRunning() {
@@ -128,7 +129,6 @@ void initBolsa(SharedMemory* sharedMemory) {
 	sharedMemory->sharedData->numEmpresas = 0;
 }
 
-
 void add_empresa(SharedMemory* sharedMemory, TCHAR* nomeEmpresa, float numAcoes, float precoAcao) {
 	if (sharedMemory->sharedData->numEmpresas < MAX_EMPRESAS) {
 		for(int i = 0; i < sharedMemory->sharedData->numEmpresas; i++) {
@@ -170,7 +170,6 @@ void stock(SharedMemory* sharedMemory, TCHAR* nomeEmpresa, float precoAcao) {
 	}
 	_tprintf(TEXT("Empresa não encontrada!\n"));
 }
-
 
 /*void list_users(SharedMemory* sharedMemory) {
 	_tprintf(TEXT("================================="));
@@ -254,7 +253,143 @@ CloseHandle(hFile);
 	
 }
 
+
+DWORD WINAPI InstanciaThread(LPVOID lpvParam) {
+	DWORD cbBytesRead = 0, cbWritten = 0, cbWritXXXXten = 0;
+	int numResp = 0;
+	BOOL fSuccess = FALSE;
+	HANDLE hPipe = (HANDLE)lpvParam;
+	HANDLE ReadReady;
+	OVERLAPPED ov;
+
+	if (hPipe == INVALID_HANDLE_VALUE) {
+		_tprintf(TEXT("[ERRO] Falha ao criar o Named Pipe! (CreateNamedPipe)\n"));
+		return -1;
+	}
+
+	_tprintf(_T("\n[SERVIDOR] Thread de cliente criada!\n"));
+	ReadReady = CreateEvent(NULL, TRUE, FALSE, NULL);
+	while (1){
+		ZeroMemory(&ov, sizeof(ov));
+		ResetEvent(ReadReady);
+		ov.hEvent = ReadReady;
+
+		fSuccess = ReadFile(hPipe, &utilizador, Msg_Sz, &cbBytesRead, &ov);
+		if (!fSuccess && GetLastError() != ERROR_IO_PENDING) {
+			_tprintf(TEXT("[ERRO] Falha na leitura do pipe! (ReadFile)\n"));
+			return -1;
+		}
+
+		// Verifica se a operação está pendente (não há dados imediatamente disponíveis)
+		if (!fSuccess) {
+			// A operação está pendente, aguardar até que ela seja concluída
+			WaitForSingleObject(ReadReady, INFINITE);
+			// Verifica se a operação foi concluída com sucesso
+			fSuccess = GetOverlappedResult(hPipe, &ov, &cbBytesRead, FALSE);
+			if (!fSuccess) {
+				_tprintf(TEXT("[ERRO] Falha na leitura do pipe! (GetOverlappedResult)\n"));
+				return -1;
+			}
+		}
+		if (utilizador.login == FALSE) {
+			int i = 0;
+			while (i < MAX_USERS)
+			{
+				if (_tcscmp(utilizador.username, users[i].username) == 0 && _tcscmp(utilizador.password, users[i].password) == 0) {
+					utilizador.login = TRUE;
+					break;
+				}
+				i++;
+			}
+			if (!utilizador.login) {
+				_tprintf(_T("Invalid username or password\n"));
+			}
+		}
+
+		_tprintf(_T("Username: %s\n"), utilizador.username);
+		_tprintf(_T("Password: %s\n"), utilizador.password);
+
+		// Processamento do pedido
+
+		//numResp = broadcastCliented(Resposta);
+
+		WriteClienteASINC(hPipe);
+	}
+	FlushFileBuffers(hPipe);
+	DisconnectNamedPipe(hPipe);
+	CloseHandle(hPipe);
+	_tprintf(TEXT("[SERVIDOR] Pipe fechado!\n"));
+	return 1;
+}
+
+int WriteClienteASINC(HANDLE hPipe) {
+	DWORD cbWritten = 0;
+	BOOL fSuccess = FALSE;
+	OVERLAPPED OverlWr = { 0 };
+	HANDLE WriteReady;
+
+	WriteReady = CreateEvent(NULL, TRUE, FALSE, NULL);
+	ZeroMemory(&OverlWr, sizeof(OverlWr));
+	ResetEvent(WriteReady);
+	OverlWr.hEvent = WriteReady;
+	fSuccess = WriteFile(hPipe, &utilizador, Msg_Sz, &cbWritten, &OverlWr);
+	WaitForSingleObject(WriteReady, INFINITE);
+	GetOverlappedResult(hPipe, &OverlWr, &cbWritten, FALSE);
+	if (cbWritten == Msg_Sz) {
+		_tprintf(TEXT("\nWrite para 1 cliente concluido\nIntroduza um comando:"));
+	}
+	else {
+		_tprintf(TEXT("\nErro no Write para 1 cliente"));
+		return 0;
+	}
+	return 1;
+}
+
+
+BOOL WINAPI ConectarClientes() {
+	HANDLE hPipe;
+	BOOL fConnected = FALSE;
+	HANDLE hThread;
+	DWORD dwThreadID;
+
+	_tprintf(TEXT("[SERVIDOR] À espera de clientes...\n"));
+
+	while (1) {
+		hPipe = CreateNamedPipe(PIPE_NAME_CLIENTS, PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED, PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT, MAX_USERS, MAX_TAM, MAX_TAM, 5000, NULL);
+		if (hPipe == INVALID_HANDLE_VALUE) {
+			_tprintf(TEXT("[ERRO] Falha ao criar o Named Pipe! (CreateNamedPipe)\n"));
+			exit(-1);
+		}
+		_tprintf(TEXT("[SERVIDOR] Aguardando conexão... (ConnectNamedPipe)\n"));
+
+
+		fConnected = ConnectNamedPipe(hPipe, NULL) ? TRUE : (GetLastError() == ERROR_PIPE_CONNECTED);
+
+		if (fConnected) {
+			_tprintf(TEXT("[SERVIDOR] Cliente conectado.\n"));
+			hThread = CreateThread(NULL, 0, InstanciaThread, (LPVOID)hPipe, 0, &dwThreadID);
+			if (hThread == NULL) {
+				_tprintf(TEXT("[ERRO] Falha ao criar a thread de cliente! (CreateThread)\n"));
+				CloseHandle(hPipe);
+				exit(-1);
+			}
+			else {
+				CloseHandle(hThread);
+			}
+		}
+		else {
+			_tprintf(TEXT("[ERRO] Falha ao conectar ao pipe! (ConnectNamedPipe)\n"));
+			CloseHandle(hPipe);
+		}
+	}
+	return TRUE;
+}
+
+
 int _tmain(int argc, TCHAR* argv[]) {
+	HANDLE hThread;
+	DWORD DwThreadID;
+	BOOL fConnect = FALSE;
 #ifdef UNICODE
 	_setmode(_fileno(stdin), _O_WTEXT);
 	_setmode(_fileno(stdout), _O_WTEXT);
@@ -269,6 +404,26 @@ int _tmain(int argc, TCHAR* argv[]) {
 			exit(-1);
 		}
 	}
+
+	//ler o ficheiro e guardar os utilizadores
+	FILE* file;
+	TCHAR fileName[] = _T("utilizadores.txt");
+	errno_t err = _wfopen_s(&file, fileName, _T("r"));
+	if (err != 0 || file == NULL) {
+		_tprintf(_T("Erro ao abrir o arquivo.\n"));
+		return 1;
+	}
+	_tprintf(_T("Arquivo aberto com sucesso.\n"));
+	int i = 0;
+	while (i < MAX_USERS && fwscanf_s(file, _T("%s %s %f"), users[i].username, _countof(users[i].username), users[i].password, _countof(users[i].password), &users[i].saldo) == 3) {
+		// Exibir os dados lidos
+		_tprintf(_T("Nome: %s\n"), users[i].username);
+		_tprintf(_T("Senha: %s\n"), users[i].password);
+		_tprintf(_T("Saldo: %.2f\n\n"), users[i].saldo);
+		i++;
+	}
+	fclose(file);
+	//---------------------------------------
 
 
 	initBolsa(&sharedMemory);
@@ -285,7 +440,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 	}
 	updateInfo(&sharedMemory);
 
-	//ThreadsBolsa threadsBolsa;
+	ThreadsBolsa threadsBolsa;
 	//threadsBolsa.hEventCloseAllThreads = SharedData
 
 	//threadsBolsa.hThreads[0] = CreateThread(NULL, 0, updateInfo, &sharedMemory, 0, NULL);
@@ -295,6 +450,10 @@ int _tmain(int argc, TCHAR* argv[]) {
 		_tprintf(TEXT("Erro ao criar a thread! [%d]\n"), GetLastError());
 		return -1;
 	}*/
+	threadsBolsa.hThreads[0] = CreateThread(NULL, 0, ConectarClientes, NULL, 0, NULL);
+
+
+
 	while (TRUE) {
 		TCHAR next_param = NULL;
 		TCHAR command[50];
@@ -338,5 +497,6 @@ int _tmain(int argc, TCHAR* argv[]) {
 		}
 
 	}
+	return 0;
 
 }

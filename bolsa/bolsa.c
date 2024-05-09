@@ -1,6 +1,5 @@
 #include "bolsa.h"
 #include "threads.h"
-#include "../utils/utils.h"
 
 //Verificar se já está uma bolsa em execução
 BOOL isBolsaRunning() {
@@ -226,52 +225,16 @@ void readFileEmpresas(SharedMemory* sharedMemory) {
 		i++;
 	}
 	updateInfo(&sharedMemory);
-	
 	fclose(file);
-
-	/*HANDLE hFile = CreateFile(EMPRESAS_FILE, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-	if (hFile == INVALID_HANDLE_VALUE) {
-		_tprintf(_T("Error opening file: %s\n"), EMPRESAS_FILE);
-		return;
-	}
-
-	char buffer[1024]; // A small buffer for reading chunks of data
-	DWORD bytesRead;
-
-	while (ReadFile(hFile, buffer, sizeof(buffer), &bytesRead, NULL) && bytesRead > 0) {
-		buffer[bytesRead] = '\0'; // Null-terminate the string
-		_tprintf(TEXT("Buffer: %hs\n"), buffer);
-
-		//Dividir o buffer em linhas
-		TCHAR* next_line = NULL;
-		TCHAR* line = _tcstok_s(buffer, TEXT("\n"), &next_line);
-		while (line != NULL) {
-			TCHAR* next_param = NULL;
-			TCHAR* nomeEmpresa = _tcstok_s(line, TEXT(" "), &next_param);
-			TCHAR* numAcoes = _tcstok_s(NULL, TEXT(" "), &next_param);
-			TCHAR* precoAcao = _tcstok_s(NULL, TEXT(" "), &next_param);
-
-
-			_tprintf(TEXT("Nome: %hs\n"), nomeEmpresa);
-			_tprintf(TEXT("Ações: %s\n"), numAcoes);
-			_tprintf(TEXT("Preço: %s\n"), precoAcao);
-
-			if (nomeEmpresa != NULL && numAcoes != NULL && precoAcao != NULL) {
-				add_empresa(&sharedMemory, nomeEmpresa, _tstof(numAcoes), _tstof(precoAcao));
-			}
-
-			line = _tcstok_s(NULL, TEXT("\n"), &next_line);
-		}
-	}
-	CloseHandle(hFile);*/
 }
 
 
-DWORD WINAPI InstanciaThread(LPVOID lpvParam) {
+DWORD WINAPI InstanciaThread(LPVOID lpParam) {
 	DWORD cbBytesRead = 0, cbWritten = 0, cbWritXXXXten = 0;
 	int numResp = 0;
 	BOOL fSuccess = FALSE;
-	HANDLE hPipe = (HANDLE)lpvParam;
+	SharedMemory* sharedMemory = (SharedMemory*)lpParam;
+	HANDLE hPipe = sharedMemory->sharedData->hPipe;
 	HANDLE ReadReady;
 	OVERLAPPED ov;
 
@@ -301,6 +264,17 @@ DWORD WINAPI InstanciaThread(LPVOID lpvParam) {
 			fSuccess = GetOverlappedResult(hPipe, &ov, &cbBytesRead, FALSE);
 			if (!fSuccess) {
 				_tprintf(TEXT("[ERRO] Falha na leitura do pipe! (GetOverlappedResult)\n"));
+				int j = 0;
+				while (1) {
+					if (_tcscmp(utilizador.username, sharedMemory->sharedData->users[j].username) == 0) {
+						sharedMemory->sharedData->users[j].login = FALSE;
+						sharedMemory->sharedData->users[j].hPipe = NULL;
+						j++;
+						break;
+					}
+				}
+				_tprintf(_T("O utilizador %s saiu\n"), utilizador.username);
+
 				return -1;
 			}
 		}
@@ -308,9 +282,11 @@ DWORD WINAPI InstanciaThread(LPVOID lpvParam) {
 			int i = 0;
 			while (i < MAX_USERS)
 			{
-				if (_tcscmp(utilizador.username, users[i].username) == 0 && _tcscmp(utilizador.password, users[i].password) == 0) {
+				if (_tcscmp(utilizador.username, sharedMemory->sharedData->users[i].username) == 0 && _tcscmp(utilizador.password, sharedMemory->sharedData->users[i].password) == 0) {
 					utilizador.login = TRUE;
-					utilizador.saldo = users[i].saldo;
+					utilizador.saldo = sharedMemory->sharedData->users[i].saldo;
+					sharedMemory->sharedData->users[i].login = TRUE;
+					sharedMemory->sharedData->users[i].hPipe = hPipe;
 					_tprintf(_T("Username: %s\n"), utilizador.username);
 					_tprintf(_T("Password: %s\n"), utilizador.password);
 					WriteClienteASINC(hPipe);
@@ -324,13 +300,12 @@ DWORD WINAPI InstanciaThread(LPVOID lpvParam) {
 		}
 		else if(utilizador.tipo == 1){
 			//MANDAR A LISTA DE EMPRESAS
-
-			/*for (int i = 0; i < sharedMemory->sharedData->numEmpresas; i++) {
-				_tprintf(TEXT("Nome: %s\n"), sharedMemory->sharedData->empresas[i].nome);
-				_tprintf(TEXT("Preço da ação: %.2f\n"), sharedMemory->sharedData->empresas[i].precoAcao);
-				_tprintf(TEXT("Ações disponíveis: %d\n"), sharedMemory->sharedData->empresas[i].acoesDisponiveis);
-				_tprintf(TEXT("=================================\n"));
-			}*/
+			utilizador.numEmpresas = sharedMemory->sharedData->numEmpresas;
+			for (int i = 0; i < sharedMemory->sharedData->numEmpresas; i++) {
+				wcscpy_s(utilizador.empresas[i].nome ,_countof(utilizador.empresas[i].nome), sharedMemory->sharedData->empresas[i].nome);
+				utilizador.empresas[i].acoesDisponiveis = sharedMemory->sharedData->empresas[i].acoesDisponiveis;
+				utilizador.empresas[i].precoAcao = sharedMemory->sharedData->empresas[i].precoAcao;
+			}
 
 			WriteClienteASINC(hPipe);
 			
@@ -348,8 +323,8 @@ DWORD WINAPI InstanciaThread(LPVOID lpvParam) {
 			int i=0;
 			while (i < MAX_USERS)
 			{
-				if (_tcscmp(utilizador.username, users[i].username) == 0 && _tcscmp(utilizador.password, users[i].password) == 0) {
-					utilizador.saldo = users[i].saldo;
+				if (_tcscmp(utilizador.username, sharedMemory->sharedData->users[i].username) == 0 && _tcscmp(utilizador.password, sharedMemory->sharedData->users[i].password) == 0) {
+					utilizador.saldo = sharedMemory->sharedData->users[i].saldo;
 					break;
 				}
 				i++;
@@ -392,12 +367,14 @@ int WriteClienteASINC(HANDLE hPipe) {
 }
 
 
-BOOL WINAPI ConectarClientes() {
-	HANDLE hPipe;
+BOOL WINAPI ConectarClientes(LPVOID lpParam) {
+	SharedMemory* sharedMemory = (SharedMemory*)lpParam;
+	HANDLE hPipe = sharedMemory->sharedData->hPipe;
+
 	BOOL fConnected = FALSE;
 	HANDLE hThread;
 	DWORD dwThreadID;
-
+	
 	_tprintf(TEXT("[SERVIDOR] À espera de clientes...\n"));
 
 	while (1) {
@@ -407,13 +384,13 @@ BOOL WINAPI ConectarClientes() {
 			exit(-1);
 		}
 		_tprintf(TEXT("[SERVIDOR] Aguardando conexão... (ConnectNamedPipe)\n"));
-
+		sharedMemory->sharedData->hPipe = hPipe;
 
 		fConnected = ConnectNamedPipe(hPipe, NULL) ? TRUE : (GetLastError() == ERROR_PIPE_CONNECTED);
 
 		if (fConnected) {
 			_tprintf(TEXT("[SERVIDOR] Cliente conectado.\n"));
-			hThread = CreateThread(NULL, 0, InstanciaThread, (LPVOID)hPipe, 0, &dwThreadID);
+			hThread = CreateThread(NULL, 0, InstanciaThread, lpParam, 0, &dwThreadID);
 			if (hThread == NULL) {
 				_tprintf(TEXT("[ERRO] Falha ao criar a thread de cliente! (CreateThread)\n"));
 				CloseHandle(hPipe);
@@ -461,11 +438,11 @@ int _tmain(int argc, TCHAR* argv[]) {
 	}
 	_tprintf(_T("Arquivo aberto com sucesso.\n"));
 	int i = 0;
-	while (i < MAX_USERS && fwscanf_s(file, _T("%s %s %f"), users[i].username, _countof(users[i].username), users[i].password, _countof(users[i].password), &users[i].saldo) == 3) {
+	while (i < MAX_USERS && fwscanf_s(file, _T("%s %s %f"), sharedMemory.sharedData->users[i].username, _countof(sharedMemory.sharedData->users[i].username), sharedMemory.sharedData->users[i].password, _countof(sharedMemory.sharedData->users[i].password), &sharedMemory.sharedData->users[i].saldo) == 3) {
 		// Exibir os dados lidos
-		_tprintf(_T("Nome: %s\n"), users[i].username);
-		_tprintf(_T("Senha: %s\n"), users[i].password);
-		_tprintf(_T("Saldo: %.2f\n\n"), users[i].saldo);
+		_tprintf(_T("Nome: %s\n"), sharedMemory.sharedData->users[i].username);
+		_tprintf(_T("Senha: %s\n"), sharedMemory.sharedData->users[i].password);
+		_tprintf(_T("Saldo: %.2f\n\n"), sharedMemory.sharedData->users[i].saldo);
 		i++;
 	}
 	fclose(file);
@@ -497,7 +474,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 		_tprintf(TEXT("Erro ao criar a thread! [%d]\n"), GetLastError());
 		return -1;
 	}*/
-	threadsBolsa.hThreads[0] = CreateThread(NULL, 0, ConectarClientes, NULL, 0, NULL);
+	threadsBolsa.hThreads[0] = CreateThread(NULL, 0, ConectarClientes, (LPVOID)&sharedMemory, 0, NULL);
 
 
 

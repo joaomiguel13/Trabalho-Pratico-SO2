@@ -1,17 +1,17 @@
 #include "cliente.h"
 
-int listaEmpresas() {
+void listaEmpresas() {
     _tprintf(TEXT("================================="));
     _tprintf(TEXT("\n|        EMPRESAS EXISTENTES      |"));
     _tprintf(TEXT("\n================================\n"));
     int i = 0;
-    /*while (i<utilizador.numEmpresas) {
+    while (i< utilizador.numEmpresas) {
         _tprintf(TEXT("Empresa: %s\n"), utilizador.empresas[i].nome);
 		_tprintf(TEXT("Valor: %.2f\n"), utilizador.empresas[i].precoAcao);
 		_tprintf(TEXT("Quantidade de acoes: %d\n"), utilizador.empresas[i].acoesDisponiveis);
 		_tprintf(TEXT("=================================\n"));
         i++;
-	}*/
+	}   
 }
 
 int Envia(HANDLE hPipe) {
@@ -67,7 +67,7 @@ int Recebe(HANDLE hPipe) {
 }
 
 
-int _tmain(int argc, LPTSTR argv[]) {
+int _tmain() {
     HANDLE hPipe;
     DWORD cbBytesRead = 0, cbBytesWrite = 0;
     BOOL fSuccess = FALSE, resposta = FALSE;
@@ -143,11 +143,10 @@ int _tmain(int argc, LPTSTR argv[]) {
                 Envia(hPipe);
                 Recebe(hPipe);
                 listaEmpresas();
-                _tprintf(TEXT("listc\n"));
             }
             else if (_tcsicmp(argumentos[0], TEXT("buy")) == 0 && nArgs == 2) {
                 utilizador.tipo = 2;
-                wcscpy_s(utilizador.empresa, _countof(utilizador.empresa), argumentos[1]);
+                wcscpy_s(utilizador.NomeEmpresa, _countof(utilizador.NomeEmpresa), argumentos[1]);
                 utilizador.qtAcoes = _wtoi(argumentos[2]);
                 Envia(hPipe);
                 Recebe(hPipe);
@@ -160,7 +159,7 @@ int _tmain(int argc, LPTSTR argv[]) {
             }
             else if (_tcsicmp(argumentos[0], TEXT("sell")) == 0 && nArgs == 2) {
                 utilizador.tipo = 3;
-                wcscpy_s(utilizador.empresa, _countof(utilizador.empresa), argumentos[1]);
+                wcscpy_s(utilizador.NomeEmpresa, _countof(utilizador.NomeEmpresa), argumentos[1]);
                 utilizador.qtAcoes = _wtoi(argumentos[2]);
                 utilizador.Sucesso = FALSE;
                 Envia(hPipe);

@@ -152,22 +152,22 @@ int _tmain() {
                 Recebe(hPipe);
 
                 if (utilizador.Sucesso == TRUE)
-                    _tprintf(TEXT("Comprou %d ações a empresa %s.\n Saldo: %.2f\n"), argumentos[2], argumentos[1], utilizador.saldo);
+                    _tprintf(TEXT("Comprou %d ações a empresa %s.\nSaldo: %.2f\n"), utilizador.qtAcoes , utilizador.NomeEmpresa, utilizador.saldo);
                 else 
-                    _tprintf(TEXT("Não há ações suficientes!\n"));
+                    _tprintf(TEXT("Não há ações suficientes,ou , saldo Insuficiente \n"));
             
             }
             else if (_tcsicmp(argumentos[0], TEXT("sell")) == 0 && nArgs == 2) {
                 utilizador.tipo = 3;
+                utilizador.Sucesso = FALSE;
                 wcscpy_s(utilizador.NomeEmpresa, _countof(utilizador.NomeEmpresa), argumentos[1]);
                 utilizador.qtAcoes = _wtoi(argumentos[2]);
-                utilizador.Sucesso = FALSE;
                 Envia(hPipe);
                 Recebe(hPipe);
 
 
                 if (utilizador.Sucesso == TRUE)
-                    _tprintf(TEXT("Vendeu %d ações a empresa %s.\n Saldo: %.2f\n"), argumentos[2], argumentos[1], utilizador.saldo);
+                    _tprintf(TEXT("Vendeu %d ações a empresa %s.\n Saldo: %.2f\n"), utilizador.qtAcoes, utilizador.NomeEmpresa, utilizador.saldo);
                 else
                     _tprintf(TEXT("Empresa não encontrada\n"));
             }

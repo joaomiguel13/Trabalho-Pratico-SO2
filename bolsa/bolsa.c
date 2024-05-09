@@ -129,9 +129,9 @@ void initBolsa(SharedMemory* sharedMemory) {
 	sharedMemory->sharedData->numEmpresas = 0;
 }
 
-void add_empresa(SharedMemory* sharedMemory, TCHAR* nomeEmpresa, float numAcoes, float precoAcao) {
+void add_empresa(SharedMemory* sharedMemory, TCHAR* nomeEmpresa, DWORD numAcoes, float precoAcao) {
 	if (sharedMemory->sharedData->numEmpresas < MAX_EMPRESAS) {
-		for(int i = 0; i < sharedMemory->sharedData->numEmpresas; i++) {
+		for(int i = 0; i < sharedMemory->sharedData->numEmpresas +1; i++) {
 			if (_tcscmp(sharedMemory->sharedData->empresas[i].nome, nomeEmpresa) == 0) {
 				_tprintf(TEXT("Empresa já existente!\n"));
 				return;
@@ -141,7 +141,6 @@ void add_empresa(SharedMemory* sharedMemory, TCHAR* nomeEmpresa, float numAcoes,
 		sharedMemory->sharedData->empresas[sharedMemory->sharedData->numEmpresas].acoesDisponiveis = numAcoes;
 		sharedMemory->sharedData->empresas[sharedMemory->sharedData->numEmpresas].precoAcao = precoAcao;
 		sharedMemory->sharedData->numEmpresas++;
-		_tprintf(TEXT("Empresa %s adicionada com sucesso!\n"), nomeEmpresa);
 	}
 	else
 		_tprintf(TEXT("Número máximo de empresas atingido!\n"));
@@ -211,7 +210,26 @@ void pause(SharedMemory* sharedMemory, DWORD seconds) {
 }*/
 
 void readFileEmpresas(SharedMemory* sharedMemory) {
-	HANDLE hFile = CreateFile(EMPRESAS_FILE, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	FILE* file;
+	TCHAR fileName[] = _T("empresas.txt");
+	errno_t err = _wfopen_s(&file, fileName, _T("r"));
+	if (err != 0 || file == NULL) {
+		_tprintf(_T("Erro ao abrir o arquivo.\n"));
+		return 1;
+	}
+	_tprintf(_T("Arquivo aberto com sucesso.\n"));
+	int i = 0;
+	
+	while (i < MAX_EMPRESAS && fwscanf_s(file, _T("%s %d %f"), sharedMemory->sharedData->empresas[i].nome, _countof(sharedMemory->sharedData->empresas[i].nome), &sharedMemory->sharedData->empresas[i].acoesDisponiveis, &sharedMemory->sharedData->empresas[i].precoAcao) == 3) {
+		// Exibir os dados lidos
+		sharedMemory->sharedData->numEmpresas++;
+		i++;
+	}
+	updateInfo(&sharedMemory);
+	
+	fclose(file);
+
+	/*HANDLE hFile = CreateFile(EMPRESAS_FILE, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (hFile == INVALID_HANDLE_VALUE) {
 		_tprintf(_T("Error opening file: %s\n"), EMPRESAS_FILE);
 		return;
@@ -232,7 +250,7 @@ void readFileEmpresas(SharedMemory* sharedMemory) {
 			TCHAR* nomeEmpresa = _tcstok_s(line, TEXT(" "), &next_param);
 			TCHAR* numAcoes = _tcstok_s(NULL, TEXT(" "), &next_param);
 			TCHAR* precoAcao = _tcstok_s(NULL, TEXT(" "), &next_param);
-			
+
 
 			_tprintf(TEXT("Nome: %hs\n"), nomeEmpresa);
 			_tprintf(TEXT("Ações: %s\n"), numAcoes);
@@ -245,9 +263,7 @@ void readFileEmpresas(SharedMemory* sharedMemory) {
 			line = _tcstok_s(NULL, TEXT("\n"), &next_line);
 		}
 	}
-
-CloseHandle(hFile);
-	
+	CloseHandle(hFile);*/
 }
 
 
@@ -308,10 +324,19 @@ DWORD WINAPI InstanciaThread(LPVOID lpvParam) {
 		}
 		else if(utilizador.tipo == 1){
 			//MANDAR A LISTA DE EMPRESAS
+
+			/*for (int i = 0; i < sharedMemory->sharedData->numEmpresas; i++) {
+				_tprintf(TEXT("Nome: %s\n"), sharedMemory->sharedData->empresas[i].nome);
+				_tprintf(TEXT("Preço da ação: %.2f\n"), sharedMemory->sharedData->empresas[i].precoAcao);
+				_tprintf(TEXT("Ações disponíveis: %d\n"), sharedMemory->sharedData->empresas[i].acoesDisponiveis);
+				_tprintf(TEXT("=================================\n"));
+			}*/
+
 			WriteClienteASINC(hPipe);
 			
 		}else if(utilizador.tipo == 2) {
 			//fazer a compra de acoes
+			
 			WriteClienteASINC(hPipe);
 			
 		}else if(utilizador.tipo == 3) {
@@ -446,12 +471,13 @@ int _tmain(int argc, TCHAR* argv[]) {
 	fclose(file);
 	//---------------------------------------
 
-
-	initBolsa(&sharedMemory);
+	//initBolsa(&sharedMemory);
+	_tprintf(TEXT("Bolsa de valores iniciada!\n"));
 	_tprintf(TEXT("Deseja carregar as empresas do ficheiro empresas.txt? (S/N): "));
 	_getts_s(&opcao, 2);
 	if (_tcscmp(opcao, TEXT("S")) == 0 || _tcscmp(opcao,TEXT("s")) == 0) {
 		readFileEmpresas(&sharedMemory);
+		updateInfo(&sharedMemory);
 	}
 	else if(_tcscmp(opcao, TEXT("N")) == 0 || _tcscmp(opcao, TEXT("n")) == 0) {
 		_tprintf(TEXT("Empresas não carregadas!\n"));
@@ -492,7 +518,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 				return;
 			}
 
-			float second = _tstof(secondParam);
+			DWORD second = _wtoi(secondParam);
 			float third = _tstof(thirdParam);
 
 			add_empresa(&sharedMemory, firstParam, second, third);

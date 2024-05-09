@@ -5,6 +5,7 @@
 
 typedef struct {
 	int tipo;
+	BOOL Sucesso;
 	TCHAR username[MAX_TAM];
 	TCHAR password[20];
 	double saldo;
@@ -12,8 +13,11 @@ typedef struct {
 	TCHAR empresa[20];
 	DWORD qtAcoes;
 	float qtAcoesEmpresa;
+	int numEmpresas;
 }NovosUsers;
 NovosUsers utilizador;
+
+
 
 
 

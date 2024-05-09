@@ -13,13 +13,18 @@
 
 typedef struct {
 	int tipo;
+	//---------------
+	BOOL login;
 	TCHAR username[MAX_TAM];
 	TCHAR password[20];
 	double saldo;
-	BOOL login;
+	//----------------
+	BOOL Sucesso;
 	TCHAR empresa[20];
 	DWORD qtAcoes;
-	float qtAcoesEmpresa;
+	int numEmpresas;
+	//---------------
 }NovosUsers;
 NovosUsers utilizador;
+
 

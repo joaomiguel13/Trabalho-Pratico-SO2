@@ -1,6 +1,18 @@
 #include "cliente.h"
 
-
+int listaEmpresas() {
+    _tprintf(TEXT("================================="));
+    _tprintf(TEXT("\n|        EMPRESAS EXISTENTES      |"));
+    _tprintf(TEXT("\n================================\n"));
+    int i = 0;
+    /*while (i<utilizador.numEmpresas) {
+        _tprintf(TEXT("Empresa: %s\n"), utilizador.empresas[i].nome);
+		_tprintf(TEXT("Valor: %.2f\n"), utilizador.empresas[i].precoAcao);
+		_tprintf(TEXT("Quantidade de acoes: %d\n"), utilizador.empresas[i].acoesDisponiveis);
+		_tprintf(TEXT("=================================\n"));
+        i++;
+	}*/
+}
 
 int Envia(HANDLE hPipe) {
     DWORD cbBytesWrite = 0;
@@ -130,24 +142,35 @@ int _tmain(int argc, LPTSTR argv[]) {
                 utilizador.tipo = 1;
                 Envia(hPipe);
                 Recebe(hPipe);
+                listaEmpresas();
                 _tprintf(TEXT("listc\n"));
             }
             else if (_tcsicmp(argumentos[0], TEXT("buy")) == 0 && nArgs == 2) {
                 utilizador.tipo = 2;
                 wcscpy_s(utilizador.empresa, _countof(utilizador.empresa), argumentos[1]);
-                //wcscpy_s(utilizador.qtAcoes, sizeof(utilizador.qtAcoes), argumentos[2]); esta a dar erro por causa do sizeof
+                utilizador.qtAcoes = _wtoi(argumentos[2]);
                 Envia(hPipe);
                 Recebe(hPipe);
 
-                _tprintf(TEXT("buy\n"));
+                if (utilizador.Sucesso == TRUE)
+                    _tprintf(TEXT("Comprou %d ações a empresa %s.\n Saldo: %.2f\n"), argumentos[2], argumentos[1], utilizador.saldo);
+                else 
+                    _tprintf(TEXT("Não há ações suficientes!\n"));
+            
             }
             else if (_tcsicmp(argumentos[0], TEXT("sell")) == 0 && nArgs == 2) {
                 utilizador.tipo = 3;
                 wcscpy_s(utilizador.empresa, _countof(utilizador.empresa), argumentos[1]);
-               // wcscpy_s(utilizador.qtAcoes, sizeof(utilizador.qtAcoes), argumentos[2]); esta a dar erro por causa do sizeof
+                utilizador.qtAcoes = _wtoi(argumentos[2]);
+                utilizador.Sucesso = FALSE;
                 Envia(hPipe);
                 Recebe(hPipe);
-                _tprintf(TEXT("sell\n"));
+
+
+                if (utilizador.Sucesso == TRUE)
+                    _tprintf(TEXT("Vendeu %d ações a empresa %s.\n Saldo: %.2f\n"), argumentos[2], argumentos[1], utilizador.saldo);
+                else
+                    _tprintf(TEXT("Empresa não encontrada\n"));
             }
             else if (_tcsicmp(argumentos[0], TEXT("balance")) == 0 && nArgs == 0) {
                 utilizador.tipo = 4;

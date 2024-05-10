@@ -5,13 +5,13 @@ void listaEmpresas() {
     _tprintf(TEXT("\n|        EMPRESAS EXISTENTES      |"));
     _tprintf(TEXT("\n================================\n"));
     int i = 0;
-    while (i< utilizador.numEmpresas) {
+    while (i < utilizador.numEmpresas) {
         _tprintf(TEXT("Empresa: %s\n"), utilizador.empresas[i].nome);
-		_tprintf(TEXT("Valor: %.2f\n"), utilizador.empresas[i].precoAcao);
-		_tprintf(TEXT("Quantidade de acoes: %d\n"), utilizador.empresas[i].acoesDisponiveis);
-		_tprintf(TEXT("=================================\n"));
+        _tprintf(TEXT("Valor: %.2f\n"), utilizador.empresas[i].precoAcao);
+        _tprintf(TEXT("Quantidade de acoes: %d\n"), utilizador.empresas[i].acoesDisponiveis);
+        _tprintf(TEXT("=================================\n"));
         i++;
-	}   
+    }
 }
 
 int Envia(HANDLE hPipe) {
@@ -28,11 +28,11 @@ int Envia(HANDLE hPipe) {
     OvW.hEvent = WriteReady;
     fSuccess = WriteFile(hPipe, &utilizador, Msg_Sz, &cbBytesWrite, &OvW);
     if (!fSuccess) {
-        _tprintf(TEXT("[ERRO] Falha ao enviar a mensagem!\n"));
+        _tprintf(TEXT("[ERRO] Falha ao enviar a mensagem! (WriteFile)\n"));
         return -1;
     }
     WaitForSingleObject(WriteReady, INFINITE);
-    _tprintf(TEXT("[CLIENTE] Mensagem enviada � bolsa!\n"));
+    _tprintf(TEXT("[CLIENTE] Mensagem enviada à bolsa!\n"));
     return 0;
 }
 
@@ -62,7 +62,7 @@ int Recebe(HANDLE hPipe) {
             return -1;
         }
     }
-    _tprintf(TEXT("[CLIENTE] Mensagem da bolsa recebida!\n"));
+    _tprintf(TEXT("[CLIENTE] Mensagem recebida da bolsa!\n"));
     return 0;
 }
 
@@ -84,16 +84,16 @@ int _tmain() {
 
     hPipe = CreateFile(PIPE_NAME_CLIENTS, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
     if (hPipe == INVALID_HANDLE_VALUE) {
-        _tprintf(TEXT("[ERRO] Falha na conex�o � bolsa!\n"));
+        _tprintf(TEXT("[ERRO] Falha ao conectar-se à bolsa!\n"));
         return -1;
     }
     if (!WaitNamedPipe(PIPE_NAME_CLIENTS, 30000)) {
-        _tprintf(TEXT("[ERRO] Falha na conex�o � bolsa\n"));
+        _tprintf(TEXT("[ERRO] Falha ao conectar-se à bolsa!\n"));
         return -1;
     }
-    _tprintf(TEXT("[CLIENTE] Bem vindo � bolsa de valores!\n"));
+    _tprintf(TEXT("[CLIENTE] Conectado à bolsa!\n Bem-vindo(a)... \n"));
 
-    
+
     TCHAR comando[MAX_TAM];
     TCHAR* argumentos[MAX_TAM];
     int nArgs;
@@ -112,17 +112,17 @@ int _tmain() {
             if (_tcscmp(argumentos[0], _T("login")) == 0 && nArgs == 2) {
                 wcscpy_s(utilizador.username, _countof(utilizador.username), argumentos[1]);
                 wcscpy_s(utilizador.password, _countof(utilizador.password), argumentos[2]);
-                
-                
+
+
                 Envia(hPipe);
                 Sleep(1000);
                 Recebe(hPipe);
-                
+
                 if (utilizador.login == TRUE) {
-                    _tprintf(TEXT("Login efetuado com sucesso!\nBem vindo: %s\t Saldo:%.2f"), utilizador.username,utilizador.saldo);
+                    _tprintf(TEXT("Login efetuado com sucesso!\nBem vindo: %s\t Saldo:%.2f"), utilizador.username, utilizador.saldo);
                 }
                 else {
-                    _tprintf(TEXT("Username ou password inv�lidos!\n"));
+                    _tprintf(TEXT("Invalid username or password\n"));
                 }
             }
             else if (_tcsicmp(argumentos[0], TEXT("exit")) != 0) {
@@ -152,10 +152,10 @@ int _tmain() {
                 Recebe(hPipe);
 
                 if (utilizador.Sucesso == TRUE)
-                    _tprintf(TEXT("Comprou %d a��es a empresa %s.\nSaldo: %.2f\n"), utilizador.qtAcoes , utilizador.NomeEmpresa, utilizador.saldo);
-                else 
-                    _tprintf(TEXT("N�o h� a��es suficientes,ou , saldo Insuficiente \n"));
-            
+                    _tprintf(TEXT("Comprou %d ações da empresa %s.\nSaldo: %.2f\n"), utilizador.qtAcoes, utilizador.NomeEmpresa, utilizador.saldo);
+                else
+                    _tprintf(TEXT("Não há ações suficientes,saldo insuficiente ou operações suspensas\n"));
+
             }
             else if (_tcsicmp(argumentos[0], TEXT("sell")) == 0 && nArgs == 2) {
                 utilizador.tipo = 3;
@@ -167,18 +167,18 @@ int _tmain() {
 
 
                 if (utilizador.Sucesso == TRUE)
-                    _tprintf(TEXT("Vendeu %d a��es a empresa %s.\n Saldo: %.2f\n"), utilizador.qtAcoes, utilizador.NomeEmpresa, utilizador.saldo);
+                    _tprintf(TEXT("Vendeu %d ações a empresa %s.\n Saldo: %.2f\n"), utilizador.qtAcoes, utilizador.NomeEmpresa, utilizador.saldo);
                 else
-                    _tprintf(TEXT("Empresa n�o encontrada\n"));
+                    _tprintf(TEXT("Empresa não encontrada ou operações suspensas\n"));
             }
             else if (_tcsicmp(argumentos[0], TEXT("balance")) == 0 && nArgs == 0) {
                 utilizador.tipo = 4;
                 Envia(hPipe);
                 Recebe(hPipe);
-                _tprintf_s(TEXT("balance: %.2f\n"),utilizador.saldo);
+                _tprintf_s(TEXT("saldo: %.2f\n"), utilizador.saldo);
             }
             else if (_tcsicmp(argumentos[0], TEXT("exit")) != 0) {
-                _tprintf(TEXT("Comando inv lido\n"));
+                _tprintf(TEXT("Comando inválido\n"));
             }
         }
     } while (_tcsicmp(argumentos[0], TEXT("exit")) != 0);

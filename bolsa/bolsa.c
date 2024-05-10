@@ -1,13 +1,13 @@
 #include "bolsa.h"
 #include "threads.h"
 
-//Verificar se j� est� uma bolsa em execu��o
+//Verificar se já está uma bolsa em execução
 BOOL isBolsaRunning() {
 	HANDLE hMutex = CreateMutex(NULL, FALSE, MUTEX_NAME);
 
 	if (GetLastError() == ERROR_ALREADY_EXISTS) {
 		CloseHandle(hMutex);
-		_tprintf(TEXT("J� existe uma bolsa a correr!\n"));
+		_tprintf(TEXT("Já existe uma bolsa a correr!\n"));
 		return TRUE;
 	}
 	else {
@@ -90,7 +90,7 @@ DWORD readRegistry(const TCHAR* keyName) {
 			if (keyName == "NCLIENTES")
 				return DEFAULT_VALUE_NCLIENTES;
 			else
-				_tprintf("\nChave inv�lida!");
+				_tprintf("\nChave inválida!");
 		}
 	}
 	else {
@@ -120,19 +120,19 @@ void writeRegistry(const TCHAR* keyName, DWORD value) {
 }
 
 void initBolsa(SharedMemory* sharedMemory) {
-	sharedMemory->sharedData->lastTransacao.empresa = NULL;
 	sharedMemory->sharedData->lastTransacao.numAcoes = 0;
 	sharedMemory->sharedData->lastTransacao.precoAcoes = 0;
 	sharedMemory->sharedData->lastTransacao.tipo = ' ';
 	sharedMemory->sharedData->lastTransacao.user = NULL;
 	sharedMemory->sharedData->numEmpresas = 0;
+	sharedMemory->sharedData->pausedBolsa = FALSE;
 }
 
 void add_empresa(SharedMemory* sharedMemory, TCHAR* nomeEmpresa, DWORD numAcoes, float precoAcao) {
 	if (sharedMemory->sharedData->numEmpresas < MAX_EMPRESAS) {
-		for(int i = 0; i < sharedMemory->sharedData->numEmpresas +1; i++) {
+		for (int i = 0; i < sharedMemory->sharedData->numEmpresas + 1; i++) {
 			if (_tcscmp(sharedMemory->sharedData->empresas[i].nome, nomeEmpresa) == 0) {
-				_tprintf(TEXT("Empresa j� existente!\nIntroduza um comando:"));
+				_tprintf(TEXT("Empresa já existente!\n"));
 				return;
 			}
 		}
@@ -140,10 +140,9 @@ void add_empresa(SharedMemory* sharedMemory, TCHAR* nomeEmpresa, DWORD numAcoes,
 		sharedMemory->sharedData->empresas[sharedMemory->sharedData->numEmpresas].acoesDisponiveis = numAcoes;
 		sharedMemory->sharedData->empresas[sharedMemory->sharedData->numEmpresas].precoAcao = precoAcao;
 		sharedMemory->sharedData->numEmpresas++;
-		_tprintf(TEXT("Empresa %s adicionada com sucesso!\nIntroduza um comando: "), nomeEmpresa);
 	}
 	else
-		_tprintf(TEXT("N�mero m�ximo de empresas atingido!\nIntroduza um comando: "));
+		_tprintf(TEXT("Número máximo de empresas atingido!\n"));
 }
 
 void list_empresas(SharedMemory* sharedMemory) {
@@ -153,9 +152,9 @@ void list_empresas(SharedMemory* sharedMemory) {
 
 	for (int i = 0; i < sharedMemory->sharedData->numEmpresas; i++) {
 		_tprintf(TEXT("Nome: %s\n"), sharedMemory->sharedData->empresas[i].nome);
-		_tprintf(TEXT("Pre�o da a��o: %.2f\n"), sharedMemory->sharedData->empresas[i].precoAcao);
-		_tprintf(TEXT("A��es dispon�veis: %d\n"), sharedMemory->sharedData->empresas[i].acoesDisponiveis);
-		_tprintf(TEXT("=================================\nIntroduza um comando: "));
+		_tprintf(TEXT("Preço da ação: %.2f\n"), sharedMemory->sharedData->empresas[i].precoAcao);
+		_tprintf(TEXT("Ações disponíveis: %d\n"), sharedMemory->sharedData->empresas[i].acoesDisponiveis);
+		_tprintf(TEXT("=================================\n"));
 	}
 }
 
@@ -163,11 +162,11 @@ void stock(SharedMemory* sharedMemory, TCHAR* nomeEmpresa, float precoAcao) {
 	for (int i = 0; i < sharedMemory->sharedData->numEmpresas; i++) {
 		if (_tcscmp(sharedMemory->sharedData->empresas[i].nome, nomeEmpresa) == 0) {
 			sharedMemory->sharedData->empresas[i].precoAcao = precoAcao;
-			_tprintf(TEXT("Pre�o da a��o da empresa %s alterado para %.2f\nIntroduza um comando: "), nomeEmpresa, precoAcao);
+			_tprintf(TEXT("Preço da ação da empresa %s alterado para %.2f\n"), nomeEmpresa, precoAcao);
 			return;
 		}
 	}
-	_tprintf(TEXT("Empresa n�o encontrada!\nIntroduza um comando: "));
+	_tprintf(TEXT("Empresa não encontrada!\n"));
 }
 
 void list_users(SharedMemory* sharedMemory) {
@@ -178,7 +177,7 @@ void list_users(SharedMemory* sharedMemory) {
 	int i = 0;
 	while (i < MAX_USERS)
 	{
-		if(_tcslen(sharedMemory->sharedData->users[i].username) > 0) {
+		if (_tcslen(sharedMemory->sharedData->users[i].username) > 0) {
 			_tprintf(TEXT("Username: %s\n"), sharedMemory->sharedData->users[i].username);
 			_tprintf(TEXT("Saldo: %.2f\n"), sharedMemory->sharedData->users[i].saldo);
 			_tprintf(TEXT("Estado: %s\n"), sharedMemory->sharedData->users[i].login ? TEXT("Online") : TEXT("Offline"));
@@ -189,9 +188,12 @@ void list_users(SharedMemory* sharedMemory) {
 }
 
 void pause(SharedMemory* sharedMemory, DWORD seconds) {
-	_tprintf(TEXT("Opera��es de compra e venda suspensas durante %d segundos!\n"), seconds);
-	Sleep(seconds * 1000);
-	_tprintf(TEXT("Opera��es de compra e venda retomadas!\n"));
+	if (!sharedMemory->sharedData->pausedBolsa) {
+		sharedMemory->sharedData->pausedBolsa = TRUE;
+		Sleep(seconds * 1000);
+		sharedMemory->sharedData->pausedBolsa = FALSE;
+	}
+	_tprintf(TEXT("Operações de compra e venda suspensas durante %d segundos!\nIntroduza um comando: "), seconds);
 }
 
 //void close(SharedMemory* sharedMemory) {
@@ -202,29 +204,17 @@ void pause(SharedMemory* sharedMemory, DWORD seconds) {
 	//CloseHandle(sharedMemory->hEventInPause);
 //}
 
-/*void help() {
-	_tprintf(TEXT("================================="));
-	_tprintf(TEXT("\n|        COMANDOS DISPON�VEIS      |"));
-	_tprintf(TEXT("\n================================\n"));
-	_tprintf(TEXT("add_empresa <nome> <numAcoes> <precoAcao> - Adiciona uma nova empresa\n"));
-	_tprintf(TEXT("list_empresas - Lista todas as empresas existentes\n"));
-	_tprintf(TEXT("stock <nome> <precoAcao> - Altera o pre�o da a��o de uma empresa\n"));
-	_tprintf(TEXT("pause <segundos> - Pausa as opera��es de compra e venda durante o tempo especificado\n"));
-	_tprintf(TEXT("help - Mostra os comandos dispon�veis\n"));
-	_tprintf(TEXT("close - Termina a bolsa de valores\n"));
-}*/
-
 void readFileEmpresas(SharedMemory* sharedMemory) {
 	FILE* file;
 	TCHAR fileName[] = _T("empresas.txt");
 	errno_t err = _wfopen_s(&file, fileName, _T("r"));
 	if (err != 0 || file == NULL) {
-		_tprintf(_T("Erro ao abrir o arquivo.\n"));
+		_tprintf(_T("Erro ao abrir o ficheiro.\n"));
 		return 1;
 	}
-	_tprintf(_T("Arquivo aberto com sucesso.\n"));
+	_tprintf(_T("Ficheiro aberto com sucesso.\n"));
 	int i = 0;
-	
+
 	while (i < MAX_EMPRESAS && fwscanf_s(file, _T("%s %d %f"), sharedMemory->sharedData->empresas[i].nome, _countof(sharedMemory->sharedData->empresas[i].nome), &sharedMemory->sharedData->empresas[i].acoesDisponiveis, &sharedMemory->sharedData->empresas[i].precoAcao) == 3) {
 		// Exibir os dados lidos
 		sharedMemory->sharedData->numEmpresas++;
@@ -245,31 +235,42 @@ DWORD WINAPI InstanciaThread(LPVOID lpParam) {
 	OVERLAPPED ov;
 
 	if (hPipe == INVALID_HANDLE_VALUE) {
-		_tprintf(TEXT("[ERRO] Falha ao criar o Named Pipe! (CreateNamedPipe)\n"));
+		_tprintf(TEXT("[ERRO] Falha ao criar o Named Pipe!\n"));
 		return -1;
 	}
 
-	_tprintf(_T("\n[BOLSA] Cliente conectado!\n"));
+	//_tprintf(_T("\n[BOLSA] Thread de cliente criada!\n"));
 	ReadReady = CreateEvent(NULL, TRUE, FALSE, NULL);
-	while (1){
+	while (1) {
 		ZeroMemory(&ov, sizeof(ov));
 		ResetEvent(ReadReady);
 		ov.hEvent = ReadReady;
 
 		fSuccess = ReadFile(hPipe, &utilizador, Msg_Sz, &cbBytesRead, &ov);
 		if (!fSuccess && GetLastError() != ERROR_IO_PENDING) {
-			_tprintf(TEXT("[ERRO] Falha na leitura do pipe! (ReadFile)\n"));
+			_tprintf(TEXT("[ERRO] Falha na leitura do pipe!\n"));
 			return -1;
 		}
 
-		// Verifica se a opera��o est� pendente (n�o h� dados imediatamente dispon�veis)
+		// Verifica se a operação está pendente (não há dados imediatamente disponíveis)
 		if (!fSuccess) {
-			// A opera��o est� pendente, aguardar at� que ela seja conclu�da
+			// A operação está pendente, aguardar até que ela seja concluída
 			WaitForSingleObject(ReadReady, INFINITE);
-			// Verifica se a opera��o foi conclu�da com sucesso
+			// Verifica se a operação foi concluída com sucesso
 			fSuccess = GetOverlappedResult(hPipe, &ov, &cbBytesRead, FALSE);
 			if (!fSuccess) {
 				_tprintf(TEXT("[ERRO] Falha na leitura do pipe!\n"));
+				int j = 0;
+				while (1) {
+					if (_tcscmp(utilizador.username, sharedMemory->sharedData->users[j].username) == 0) {
+						sharedMemory->sharedData->users[j].login = FALSE;
+						sharedMemory->sharedData->users[j].hPipe = NULL;
+						j++;
+						break;
+					}
+				}
+				_tprintf(_T("O utilizador %s saiu\nIntroduza um comando:"), utilizador.username);
+
 				return -1;
 			}
 		}
@@ -290,83 +291,107 @@ DWORD WINAPI InstanciaThread(LPVOID lpParam) {
 				i++;
 			}
 			if (!utilizador.login) {
-				_tprintf(_T("Username ou password inv�lidos, tente novamente!\n"));
+				_tprintf(_T("Username ou password incorretos\n"));
 			}
 		}
-		else if(utilizador.tipo == 1){
+		else if (utilizador.tipo == 1) {
 			//MANDAR A LISTA DE EMPRESAS
 			utilizador.numEmpresas = sharedMemory->sharedData->numEmpresas;
 			for (int i = 0; i < sharedMemory->sharedData->numEmpresas; i++) {
-				wcscpy_s(utilizador.empresas[i].nome ,_countof(utilizador.empresas[i].nome), sharedMemory->sharedData->empresas[i].nome);
+				wcscpy_s(utilizador.empresas[i].nome, _countof(utilizador.empresas[i].nome), sharedMemory->sharedData->empresas[i].nome);
 				utilizador.empresas[i].acoesDisponiveis = sharedMemory->sharedData->empresas[i].acoesDisponiveis;
 				utilizador.empresas[i].precoAcao = sharedMemory->sharedData->empresas[i].precoAcao;
 			}
 
 			WriteClienteASINC(hPipe);
-			
-		}else if(utilizador.tipo == 2) {
+
+		}
+		else if (utilizador.tipo == 2) {
 			//fazer a compra de acoes
-			for (int i = 0; i < sharedMemory->sharedData->numEmpresas; i++) {
-				if(_tcscmp(utilizador.NomeEmpresa,sharedMemory->sharedData->empresas[i].nome) == 0) {
-					if(sharedMemory->sharedData->empresas[i].acoesDisponiveis==0){
-						utilizador.Sucesso = FALSE;
-						break;
-					}else if (utilizador.qtAcoes > sharedMemory->sharedData->empresas[i].acoesDisponiveis) {
-						utilizador.Sucesso = FALSE;;
-						break;
-					}
-					else {
-						if(utilizador.qtAcoes * sharedMemory->sharedData->empresas[i].precoAcao > utilizador.saldo){
+			if (sharedMemory->sharedData->pausedBolsa == FALSE) {
+				for (int i = 0; i < sharedMemory->sharedData->numEmpresas; i++) {
+					if (_tcscmp(utilizador.NomeEmpresa, sharedMemory->sharedData->empresas[i].nome) == 0) {
+						if (sharedMemory->sharedData->empresas[i].acoesDisponiveis == 0) {
 							utilizador.Sucesso = FALSE;
 							break;
 						}
-						sharedMemory->sharedData->empresas[i].acoesDisponiveis -= utilizador.qtAcoes;
+						else if (utilizador.qtAcoes > sharedMemory->sharedData->empresas[i].acoesDisponiveis) {
+							utilizador.Sucesso = FALSE;;
+							break;
+						}
+						else {
+							if (utilizador.qtAcoes * sharedMemory->sharedData->empresas[i].precoAcao > utilizador.saldo) {
+								utilizador.Sucesso = FALSE;
+								break;
+							}
+							sharedMemory->sharedData->empresas[i].acoesDisponiveis -= utilizador.qtAcoes;
+							int j = 0;
+							while (j < MAX_USERS)
+							{
+								if (_tcscmp(utilizador.username, sharedMemory->sharedData->users[j].username) == 0) {
+									sharedMemory->sharedData->users[j].saldo -= utilizador.qtAcoes * sharedMemory->sharedData->empresas[i].precoAcao;
+									utilizador.saldo = sharedMemory->sharedData->users[j].saldo;
+									utilizador.Sucesso = TRUE;
+
+									/*wcscpy_s(sharedMemory->sharedData->lastTransacao.empresa->nome, _countof(sharedMemory->sharedData->lastTransacao.empresa->nome), utilizador.NomeEmpresa);
+									sharedMemory->sharedData->lastTransacao.numAcoes = sharedMemory->sharedData->empresas[i].acoesDisponiveis;
+									sharedMemory->sharedData->lastTransacao.precoAcoes = sharedMemory->sharedData->empresas[i].precoAcao;*/
+									break;
+								}
+								j++;
+							}
+							break;
+						}
+					}
+				}
+			}
+			else {
+				utilizador.Sucesso = FALSE;
+				_tprintf(TEXT("Operações de compra e venda suspensas!\n"));
+			}
+
+			WriteClienteASINC(hPipe);
+
+		}
+		else if (utilizador.tipo == 3) {
+			//fazer a venda de acoes
+			if (sharedMemory->sharedData->pausedBolsa == FALSE) {
+				for (int i = 0; i < sharedMemory->sharedData->numEmpresas; i++) {
+					if (_tcscmp(utilizador.NomeEmpresa, sharedMemory->sharedData->empresas[i].nome) == 0) {
+						sharedMemory->sharedData->empresas[i].acoesDisponiveis += utilizador.qtAcoes;
 						int j = 0;
 						while (j < MAX_USERS)
 						{
 							if (_tcscmp(utilizador.username, sharedMemory->sharedData->users[j].username) == 0) {
-								sharedMemory->sharedData->users[j].saldo -= utilizador.qtAcoes * sharedMemory->sharedData->empresas[i].precoAcao;
+								sharedMemory->sharedData->users[j].saldo += (utilizador.qtAcoes * sharedMemory->sharedData->empresas[i].precoAcao);
 								utilizador.saldo = sharedMemory->sharedData->users[j].saldo;
 								utilizador.Sucesso = TRUE;
-									
-
+								/*wcscpy_s(sharedMemory->sharedData->lastTransacao.empresa->nome, _countof(sharedMemory->sharedData->lastTransacao.empresa->nome), utilizador.NomeEmpresa);
+								sharedMemory->sharedData->lastTransacao.numAcoes = sharedMemory->sharedData->empresas[i].acoesDisponiveis;
+								sharedMemory->sharedData->lastTransacao.precoAcoes = sharedMemory->sharedData->empresas[i].precoAcao;*/
 								break;
 							}
 							j++;
 						}
 						break;
 					}
-				}
-			}
-			
-			WriteClienteASINC(hPipe);
-			
-		}else if(utilizador.tipo == 3) {
-			//fazer a venda de acoes
-			for(int i = 0; i < sharedMemory->sharedData->numEmpresas; i++) {
-				if (_tcscmp(utilizador.NomeEmpresa, sharedMemory->sharedData->empresas[i].nome) == 0) {
-					sharedMemory->sharedData->empresas[i].acoesDisponiveis += utilizador.qtAcoes;
-					int j = 0;
-					while (j < MAX_USERS)
-					{
-						if (_tcscmp(utilizador.username, sharedMemory->sharedData->users[j].username) == 0) {
-							sharedMemory->sharedData->users[j].saldo += (utilizador.qtAcoes * sharedMemory->sharedData->empresas[i].precoAcao);
-							utilizador.saldo = sharedMemory->sharedData->users[j].saldo;
-							utilizador.Sucesso = TRUE;
-							break;
-						}
-						j++;
+					else {
+						utilizador.Sucesso = FALSE;
 					}
-					break;
-				}else {
-					utilizador.Sucesso = FALSE;
 				}
 			}
+			else {
+				utilizador.Sucesso = FALSE;
+				_tprintf(TEXT("Operações de compra e venda suspensas!\n"));
+			}
+				
+			
 			WriteClienteASINC(hPipe);
 
-		}else if(utilizador.tipo == 4) {
+		}
+		else if (utilizador.tipo == 4) {
 			//ver o saldo
-			int i=0;
+			int i = 0;
 			while (i < MAX_USERS)
 			{
 				if (_tcscmp(utilizador.username, sharedMemory->sharedData->users[i].username) == 0 && _tcscmp(utilizador.password, sharedMemory->sharedData->users[i].password) == 0) {
@@ -403,11 +428,10 @@ int WriteClienteASINC(HANDLE hPipe) {
 	WaitForSingleObject(WriteReady, INFINITE);
 	GetOverlappedResult(hPipe, &OverlWr, &cbWritten, FALSE);
 	if (cbWritten == Msg_Sz) {
-		_tprintf(TEXT("\nMensagem enviada com sucesso!\nIntroduza um comando: "));
-
+		_tprintf(TEXT("\nWrite para 1 cliente concluido\nIntroduza um comando:"));
 	}
 	else {
-		_tprintf(TEXT("\nErro a escrever para o cliente!"));
+		_tprintf(TEXT("\nErro no Write para 1 cliente"));
 		return 0;
 	}
 	return 1;
@@ -422,7 +446,7 @@ BOOL WINAPI ConectarClientes(LPVOID lpParam) {
 	HANDLE hThread;
 	DWORD dwThreadID;
 
-	_tprintf(TEXT("[BOLSA] � espera de clientes...\n"));
+	_tprintf(TEXT("[BOLSA] À espera de clientes...\n"));
 
 	while (1) {
 		hPipe = CreateNamedPipe(PIPE_NAME_CLIENTS, PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED, PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT, MAX_USERS, MAX_TAM, MAX_TAM, 5000, NULL);
@@ -430,14 +454,14 @@ BOOL WINAPI ConectarClientes(LPVOID lpParam) {
 			_tprintf(TEXT("[ERRO] Falha ao criar o Named Pipe!\n"));
 			exit(-1);
 		}
-		_tprintf(TEXT("[BOLSA] � espera da conex�o...\nIntroduza um comando: "));
-
+		_tprintf(TEXT("[BOLSA] À espera de conexão...\n"));
+		sharedMemory->sharedData->hPipe = hPipe;
 
 		fConnected = ConnectNamedPipe(hPipe, NULL) ? TRUE : (GetLastError() == ERROR_PIPE_CONNECTED);
 
 		if (fConnected) {
-			_tprintf(TEXT("[BOLSA] Cliente conectado!\nIntroduza um comando: "));
-			hThread = CreateThread(NULL, 0, InstanciaThread, (LPVOID)hPipe, 0, &dwThreadID);
+			_tprintf(TEXT("[BOLSA] Cliente conectado.\n"));
+			hThread = CreateThread(NULL, 0, InstanciaThread, lpParam, 0, &dwThreadID);
 			if (hThread == NULL) {
 				_tprintf(TEXT("[ERRO] Falha ao criar a thread de cliente!\n"));
 				CloseHandle(hPipe);
@@ -448,7 +472,7 @@ BOOL WINAPI ConectarClientes(LPVOID lpParam) {
 			}
 		}
 		else {
-			_tprintf(TEXT("[ERRO] Falha a conectar ao pipe!\n"));
+			_tprintf(TEXT("[ERRO] Falha ao conectar ao pipe!\n"));
 			CloseHandle(hPipe);
 		}
 	}
@@ -487,27 +511,27 @@ int _tmain(int argc, TCHAR* argv[]) {
 	int i = 0;
 	while (i < MAX_USERS && fwscanf_s(file, _T("%s %s %f"), sharedMemory.sharedData->users[i].username, _countof(sharedMemory.sharedData->users[i].username), sharedMemory.sharedData->users[i].password, _countof(sharedMemory.sharedData->users[i].password), &sharedMemory.sharedData->users[i].saldo) == 3) {
 		// Exibir os dados lidos
-		_tprintf(_T("Nome: %s\n"), users[i].username);
-		_tprintf(_T("Password: %s\n"), users[i].password);
-		_tprintf(_T("Saldo: %.2f\n\n"), users[i].saldo);
+		_tprintf(_T("Nome: %s\n"), sharedMemory.sharedData->users[i].username);
+		_tprintf(_T("Senha: %s\n"), sharedMemory.sharedData->users[i].password);
+		_tprintf(_T("Saldo: %.2f\n\n"), sharedMemory.sharedData->users[i].saldo);
 		i++;
 	}
 	fclose(file);
 	//---------------------------------------
 
-	//initBolsa(&sharedMemory);
+	initBolsa(&sharedMemory);
 	_tprintf(TEXT("Bolsa de valores iniciada!\n"));
 	_tprintf(TEXT("Deseja carregar as empresas do ficheiro empresas.txt? (S/N): "));
 	_getts_s(&opcao, 2);
-	if (_tcscmp(opcao, TEXT("S")) == 0 || _tcscmp(opcao,TEXT("s")) == 0) {
+	if (_tcscmp(opcao, TEXT("S")) == 0 || _tcscmp(opcao, TEXT("s")) == 0) {
 		readFileEmpresas(&sharedMemory);
 		updateInfo(&sharedMemory);
 	}
-	else if(_tcscmp(opcao, TEXT("N")) == 0 || _tcscmp(opcao, TEXT("n")) == 0) {
-		_tprintf(TEXT("Empresas n�o carregadas!\n"));
+	else if (_tcscmp(opcao, TEXT("N")) == 0 || _tcscmp(opcao, TEXT("n")) == 0) {
+		_tprintf(TEXT("Empresas não carregadas!\n"));
 	}
 	else {
-		_tprintf(TEXT("Op��o inv�lida!\n"));
+		_tprintf(TEXT("Opção inválida!\n"));
 	}
 	updateInfo(&sharedMemory);
 
@@ -528,7 +552,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 	while (TRUE) {
 		TCHAR next_param = NULL;
 		TCHAR command[50];
-		//_tprintf(TEXT("Introduza um comando: "));
+		_tprintf(TEXT("Introduza um comando: "));
 		_getts_s(&command, 50);
 
 		TCHAR* cmd = _tcstok_s(command, TEXT(" "), &next_param);
@@ -538,27 +562,26 @@ int _tmain(int argc, TCHAR* argv[]) {
 			TCHAR* thirdParam = _tcstok_s(NULL, TEXT(" "), &next_param);
 
 			if (firstParam == NULL || secondParam == NULL || thirdParam == NULL) {
-				_tprintf(TEXT("\nComando n�o reconhecido!\nIntroduza um comando: "));
-				//return;
+				_tprintf(TEXT("\nComando não reconhecido!\n"));
+				return;
 			}
-			else {
 
-				float second = _tstof(secondParam);
-				float third = _tstof(thirdParam);
+			DWORD second = _wtoi(secondParam);
+			float third = _tstof(thirdParam);
 
-				add_empresa(&sharedMemory, firstParam, second, third);
-				updateInfo(&sharedMemory);
-			}
+			add_empresa(&sharedMemory, firstParam, second, third);
+			updateInfo(&sharedMemory);
+
 		}
-		else if(_tcscmp(cmd, TEXT("listc")) == 0) {
+		else if (_tcscmp(cmd, TEXT("listc")) == 0) {
 			list_empresas(&sharedMemory);
 		}
-		else if(_tcscmp(cmd, TEXT("stock")) == 0) {
+		else if (_tcscmp(cmd, TEXT("stock")) == 0) {
 			TCHAR* firstParam = _tcstok_s(NULL, TEXT(" "), &next_param);
 			TCHAR* secondParam = _tcstok_s(NULL, TEXT(" "), &next_param);
 
 			if (firstParam == NULL || secondParam == NULL) {
-				_tprintf(TEXT("\nComando n�o reconhecido \n"));
+				_tprintf(TEXT("\nComando não reconhecido!\n"));
 				return;
 			}
 
@@ -569,6 +592,21 @@ int _tmain(int argc, TCHAR* argv[]) {
 		}
 		else if (_tcscmp(cmd, TEXT("users")) == 0) {
 			list_users(&sharedMemory);
+		}
+		else if (_tcscmp(cmd, TEXT("pause")) == 0) {
+			TCHAR* firstParam = _tcstok_s(NULL, TEXT(" "), &next_param);
+
+			if (firstParam == NULL) {
+				_tprintf(TEXT("\nComando não reconhecido!\n"));
+				return;
+			}
+
+			DWORD second = _wtoi(firstParam);
+
+			pause(&sharedMemory, second);
+		}
+		else {
+			_tprintf(TEXT("\nComando não reconhecido!\n"));
 		}
 	}
 	return 0;

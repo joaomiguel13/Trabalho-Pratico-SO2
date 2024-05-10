@@ -63,6 +63,8 @@ typedef struct {
 	Transacoes lastTransacao;
 	User users[MAX_USERS];
 	HANDLE hPipe;
+
+	BOOL pausedBolsa;
 }SharedData;
 
 typedef struct {

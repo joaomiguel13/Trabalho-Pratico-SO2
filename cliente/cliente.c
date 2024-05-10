@@ -1,5 +1,19 @@
 #include "cliente.h"
 
+void listaEmpresas() {
+    _tprintf(TEXT("================================="));
+    _tprintf(TEXT("\n|        EMPRESAS EXISTENTES      |"));
+    _tprintf(TEXT("\n================================\n"));
+    int i = 0;
+    while (i< utilizador.numEmpresas) {
+        _tprintf(TEXT("Empresa: %s\n"), utilizador.empresas[i].nome);
+		_tprintf(TEXT("Valor: %.2f\n"), utilizador.empresas[i].precoAcao);
+		_tprintf(TEXT("Quantidade de acoes: %d\n"), utilizador.empresas[i].acoesDisponiveis);
+		_tprintf(TEXT("=================================\n"));
+        i++;
+	}   
+}
+
 int Envia(HANDLE hPipe) {
     DWORD cbBytesWrite = 0;
     BOOL fSuccess = FALSE;
@@ -18,7 +32,7 @@ int Envia(HANDLE hPipe) {
         return -1;
     }
     WaitForSingleObject(WriteReady, INFINITE);
-    _tprintf(TEXT("[CLIENTE] Mensagem enviada à bolsa!\n"));
+    _tprintf(TEXT("[CLIENTE] Mensagem enviada ï¿½ bolsa!\n"));
     return 0;
 }
 
@@ -53,7 +67,7 @@ int Recebe(HANDLE hPipe) {
 }
 
 
-int _tmain(int argc, LPTSTR argv[]) {
+int _tmain() {
     HANDLE hPipe;
     DWORD cbBytesRead = 0, cbBytesWrite = 0;
     BOOL fSuccess = FALSE, resposta = FALSE;
@@ -70,14 +84,14 @@ int _tmain(int argc, LPTSTR argv[]) {
 
     hPipe = CreateFile(PIPE_NAME_CLIENTS, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
     if (hPipe == INVALID_HANDLE_VALUE) {
-        _tprintf(TEXT("[ERRO] Falha na conexão à bolsa!\n"));
+        _tprintf(TEXT("[ERRO] Falha na conexï¿½o ï¿½ bolsa!\n"));
         return -1;
     }
     if (!WaitNamedPipe(PIPE_NAME_CLIENTS, 30000)) {
-        _tprintf(TEXT("[ERRO] Falha na conexão à bolsa\n"));
+        _tprintf(TEXT("[ERRO] Falha na conexï¿½o ï¿½ bolsa\n"));
         return -1;
     }
-    _tprintf(TEXT("[CLIENTE] Bem vindo à bolsa de valores!\n"));
+    _tprintf(TEXT("[CLIENTE] Bem vindo ï¿½ bolsa de valores!\n"));
 
     
     TCHAR comando[MAX_TAM];
@@ -104,45 +118,11 @@ int _tmain(int argc, LPTSTR argv[]) {
                 Sleep(1000);
                 Recebe(hPipe);
                 
-                /*HANDLE ReadReady, WriteReady;
-                WriteReady = CreateEvent(NULL, TRUE, FALSE, NULL);
-                ReadReady = CreateEvent(NULL, TRUE, FALSE, NULL);
-                // Configurar opera  o overlapped para escrita
-                ZeroMemory(&OvW, sizeof(OvW));
-                ResetEvent(WriteReady);
-                OvW.hEvent = WriteReady;
-                fSuccess = WriteFile(hPipe, &utilizador, Msg_Sz, &cbBytesWrite, &OvW);
-                if (!fSuccess) {
-                    _tprintf(TEXT("[ERRO] Falha ao enviar a mensagem! (WriteFile)\n"));
-                    return -1;
-                }
-                WaitForSingleObject(WriteReady, INFINITE);
-                _tprintf(TEXT("[CLIENTE] Mensagem enviada ao servidor!\n"));
-                // Configurar opera  o overlapped para leitura
-                ZeroMemory(&OvR, sizeof(OvR));
-                ResetEvent(ReadReady);
-                OvR.hEvent = ReadReady;
-                fSuccess = ReadFile(hPipe, &utilizador, Msg_Sz, &cbBytesRead, &OvR);
-                if (!fSuccess && GetLastError() != ERROR_IO_PENDING) {
-                    _tprintf(TEXT("[ERRO] Falha ao receber a mensagem! (ReadFile)\n"));
-                    return -1;
-                }
-                // Verifica se a opera  o est  pendente (n o h  dados imediatamente dispon veis)
-                if (!fSuccess) {
-                    // A opera  o est  pendente, aguardar at  que ela seja conclu da
-                    WaitForSingleObject(ReadReady, INFINITE);
-                    // Verifica se a opera  o foi conclu da com sucesso
-                    fSuccess = GetOverlappedResult(hPipe, &OvR, &cbBytesRead, FALSE);
-                    if (!fSuccess) {
-                        _tprintf(TEXT("[ERRO] Falha na leitura do pipe! (GetOverlappedResult)\n"));
-                        return -1;
-                    }
-                }*/
                 if (utilizador.login == TRUE) {
-                    _tprintf(TEXT("Login efetuado com sucesso!\nBem vindo: %s\t Saldo:%d"), utilizador.username,utilizador.saldo);
+                    _tprintf(TEXT("Login efetuado com sucesso!\nBem vindo: %s\t Saldo:%.2f"), utilizador.username,utilizador.saldo);
                 }
                 else {
-                    _tprintf(TEXT("Username ou password inválidos!\n"));
+                    _tprintf(TEXT("Username ou password invï¿½lidos!\n"));
                 }
             }
             else if (_tcsicmp(argumentos[0], TEXT("exit")) != 0) {
@@ -159,24 +139,43 @@ int _tmain(int argc, LPTSTR argv[]) {
             }
             nArgs -= 1;
             if (_tcsicmp(argumentos[0], TEXT("listc")) == 0 && nArgs == 0) {
- 
-
-                _tprintf(TEXT("listc\n"));
+                utilizador.tipo = 1;
+                Envia(hPipe);
+                Recebe(hPipe);
+                listaEmpresas();
             }
             else if (_tcsicmp(argumentos[0], TEXT("buy")) == 0 && nArgs == 2) {
+                utilizador.tipo = 2;
+                wcscpy_s(utilizador.NomeEmpresa, _countof(utilizador.NomeEmpresa), argumentos[1]);
+                utilizador.qtAcoes = _wtoi(argumentos[2]);
+                Envia(hPipe);
+                Recebe(hPipe);
 
-
-                _tprintf(TEXT("buy\n"));
+                if (utilizador.Sucesso == TRUE)
+                    _tprintf(TEXT("Comprou %d aï¿½ï¿½es a empresa %s.\nSaldo: %.2f\n"), utilizador.qtAcoes , utilizador.NomeEmpresa, utilizador.saldo);
+                else 
+                    _tprintf(TEXT("Nï¿½o hï¿½ aï¿½ï¿½es suficientes,ou , saldo Insuficiente \n"));
+            
             }
             else if (_tcsicmp(argumentos[0], TEXT("sell")) == 0 && nArgs == 2) {
+                utilizador.tipo = 3;
+                utilizador.Sucesso = FALSE;
+                wcscpy_s(utilizador.NomeEmpresa, _countof(utilizador.NomeEmpresa), argumentos[1]);
+                utilizador.qtAcoes = _wtoi(argumentos[2]);
+                Envia(hPipe);
+                Recebe(hPipe);
 
-                //Envia(hPipe, WriteReady, ReadReady);
-                _tprintf(TEXT("sell\n"));
+
+                if (utilizador.Sucesso == TRUE)
+                    _tprintf(TEXT("Vendeu %d aï¿½ï¿½es a empresa %s.\n Saldo: %.2f\n"), utilizador.qtAcoes, utilizador.NomeEmpresa, utilizador.saldo);
+                else
+                    _tprintf(TEXT("Empresa nï¿½o encontrada\n"));
             }
             else if (_tcsicmp(argumentos[0], TEXT("balance")) == 0 && nArgs == 0) {
-
-                //Envia(hPipe, WriteReady, ReadReady);
-                _tprintf(TEXT("balance\n"));
+                utilizador.tipo = 4;
+                Envia(hPipe);
+                Recebe(hPipe);
+                _tprintf_s(TEXT("balance: %.2f\n"),utilizador.saldo);
             }
             else if (_tcsicmp(argumentos[0], TEXT("exit")) != 0) {
                 _tprintf(TEXT("Comando inv lido\n"));

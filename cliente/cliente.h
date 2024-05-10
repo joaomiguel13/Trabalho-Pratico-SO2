@@ -7,15 +7,29 @@
 #include <fcntl.h>
 #include "../utils/utils.h"
 
-#define MUTEX_NAME TEXT("mutexBolsa")
-#define MAX_MSG 60
-#define Msg_Sz sizeof(utilizador)
+typedef struct {
+	TCHAR nome[100];
+	float precoAcao;
+	DWORD acoesDisponiveis;
+}Empresas;
 
 typedef struct {
+	int tipo;
+	//---------------
+	BOOL login;
 	TCHAR username[MAX_TAM];
 	TCHAR password[20];
 	double saldo;
-	BOOL login;
+	//----------------
+	BOOL Sucesso;
+	TCHAR NomeEmpresa[20];
+	DWORD qtAcoes;
+	//---------------
+	int numEmpresas;
+	//---------------
+	Empresas empresas[MAX_EMPRESAS];
 }NovosUsers;
 NovosUsers utilizador;
+
+
 

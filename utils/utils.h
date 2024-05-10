@@ -31,15 +31,11 @@ typedef struct {
 	TCHAR username[MAX_TAM];
 	TCHAR password[20];
 	float saldo;
+	BOOL login;
+	HANDLE hPipe;
+	DWORD dwThreadID;
 	//Acoes carteira[40]; //........ associar as acoes de compra
 } User;
-
-User users[MAX_USERS];
-
-typedef struct {
-	User users[MAX_USERS];
-	DWORD numUsers;
-} Bolsa;
 
 typedef struct {
 	TCHAR nome[100];
@@ -65,6 +61,8 @@ typedef struct {
 	Empresa empresas[MAX_EMPRESAS];
 	int numEmpresas; //contador de empresas
 	Transacoes lastTransacao;
+	User users[MAX_USERS];
+	HANDLE hPipe;
 }SharedData;
 
 typedef struct {
@@ -74,6 +72,7 @@ typedef struct {
 	HANDLE hEventRunning;
 
 	SharedData* sharedData;
+	
 }SharedMemory;
 
 #define N_THREADS_BOLSA 2

@@ -133,7 +133,7 @@ void add_empresa(SharedMemory* sharedMemory, TCHAR* nomeEmpresa, float numAcoes,
 	if (sharedMemory->sharedData->numEmpresas < MAX_EMPRESAS) {
 		for(int i = 0; i < sharedMemory->sharedData->numEmpresas; i++) {
 			if (_tcscmp(sharedMemory->sharedData->empresas[i].nome, nomeEmpresa) == 0) {
-				_tprintf(TEXT("Empresa já existente!\n"));
+				_tprintf(TEXT("Empresa já existente!\nIntroduza um comando:"));
 				return;
 			}
 		}
@@ -141,10 +141,10 @@ void add_empresa(SharedMemory* sharedMemory, TCHAR* nomeEmpresa, float numAcoes,
 		sharedMemory->sharedData->empresas[sharedMemory->sharedData->numEmpresas].acoesDisponiveis = numAcoes;
 		sharedMemory->sharedData->empresas[sharedMemory->sharedData->numEmpresas].precoAcao = precoAcao;
 		sharedMemory->sharedData->numEmpresas++;
-		_tprintf(TEXT("Empresa %s adicionada com sucesso!\n"), nomeEmpresa);
+		_tprintf(TEXT("Empresa %s adicionada com sucesso!\nIntroduza um comando: "), nomeEmpresa);
 	}
 	else
-		_tprintf(TEXT("Número máximo de empresas atingido!\n"));
+		_tprintf(TEXT("Número máximo de empresas atingido!\nIntroduza um comando: "));
 }
 
 void list_empresas(SharedMemory* sharedMemory) {
@@ -156,7 +156,7 @@ void list_empresas(SharedMemory* sharedMemory) {
 		_tprintf(TEXT("Nome: %s\n"), sharedMemory->sharedData->empresas[i].nome);
 		_tprintf(TEXT("Preço da ação: %.2f\n"), sharedMemory->sharedData->empresas[i].precoAcao);
 		_tprintf(TEXT("Ações disponíveis: %d\n"), sharedMemory->sharedData->empresas[i].acoesDisponiveis);
-		_tprintf(TEXT("=================================\n"));
+		_tprintf(TEXT("=================================\nIntroduza um comando: "));
 	}
 }
 
@@ -164,11 +164,11 @@ void stock(SharedMemory* sharedMemory, TCHAR* nomeEmpresa, float precoAcao) {
 	for (int i = 0; i < sharedMemory->sharedData->numEmpresas; i++) {
 		if (_tcscmp(sharedMemory->sharedData->empresas[i].nome, nomeEmpresa) == 0) {
 			sharedMemory->sharedData->empresas[i].precoAcao = precoAcao;
-			_tprintf(TEXT("Preço da ação da empresa %s alterado para %.2f\n"), nomeEmpresa, precoAcao);
+			_tprintf(TEXT("Preço da ação da empresa %s alterado para %.2f\nIntroduza um comando: "), nomeEmpresa, precoAcao);
 			return;
 		}
 	}
-	_tprintf(TEXT("Empresa não encontrada!\n"));
+	_tprintf(TEXT("Empresa não encontrada!\nIntroduza um comando: "));
 }
 
 /*void list_users(SharedMemory* sharedMemory) {
@@ -264,7 +264,7 @@ DWORD WINAPI InstanciaThread(LPVOID lpvParam) {
 		return -1;
 	}
 
-	_tprintf(_T("\n[SERVIDOR] Thread de cliente criada!\n"));
+	_tprintf(_T("\n[BOLSA] Cliente conectado!\n"));
 	ReadReady = CreateEvent(NULL, TRUE, FALSE, NULL);
 	while (1){
 		ZeroMemory(&ov, sizeof(ov));
@@ -284,7 +284,7 @@ DWORD WINAPI InstanciaThread(LPVOID lpvParam) {
 			// Verifica se a operação foi concluída com sucesso
 			fSuccess = GetOverlappedResult(hPipe, &ov, &cbBytesRead, FALSE);
 			if (!fSuccess) {
-				_tprintf(TEXT("[ERRO] Falha na leitura do pipe! (GetOverlappedResult)\n"));
+				_tprintf(TEXT("[ERRO] Falha na leitura do pipe!\n"));
 				return -1;
 			}
 		}
@@ -299,7 +299,7 @@ DWORD WINAPI InstanciaThread(LPVOID lpvParam) {
 				i++;
 			}
 			if (!utilizador.login) {
-				_tprintf(_T("Invalid username or password\n"));
+				_tprintf(_T("Username ou password inválidos, tente novamente!\n"));
 			}
 		}
 
@@ -315,7 +315,7 @@ DWORD WINAPI InstanciaThread(LPVOID lpvParam) {
 	FlushFileBuffers(hPipe);
 	DisconnectNamedPipe(hPipe);
 	CloseHandle(hPipe);
-	_tprintf(TEXT("[SERVIDOR] Pipe fechado!\n"));
+	_tprintf(TEXT("[BOLSA] Pipe fechado!\n"));
 	return 1;
 }
 
@@ -333,10 +333,11 @@ int WriteClienteASINC(HANDLE hPipe) {
 	WaitForSingleObject(WriteReady, INFINITE);
 	GetOverlappedResult(hPipe, &OverlWr, &cbWritten, FALSE);
 	if (cbWritten == Msg_Sz) {
-		_tprintf(TEXT("\nWrite para 1 cliente concluido\nIntroduza um comando:"));
+		_tprintf(TEXT("\nMensagem enviada com sucesso!\nIntroduza um comando: "));
+
 	}
 	else {
-		_tprintf(TEXT("\nErro no Write para 1 cliente"));
+		_tprintf(TEXT("\nErro a escrever para o cliente!"));
 		return 0;
 	}
 	return 1;
@@ -349,24 +350,24 @@ BOOL WINAPI ConectarClientes() {
 	HANDLE hThread;
 	DWORD dwThreadID;
 
-	_tprintf(TEXT("[SERVIDOR] À espera de clientes...\n"));
+	_tprintf(TEXT("[BOLSA] À espera de clientes...\n"));
 
 	while (1) {
 		hPipe = CreateNamedPipe(PIPE_NAME_CLIENTS, PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED, PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT, MAX_USERS, MAX_TAM, MAX_TAM, 5000, NULL);
 		if (hPipe == INVALID_HANDLE_VALUE) {
-			_tprintf(TEXT("[ERRO] Falha ao criar o Named Pipe! (CreateNamedPipe)\n"));
+			_tprintf(TEXT("[ERRO] Falha ao criar o Named Pipe!\n"));
 			exit(-1);
 		}
-		_tprintf(TEXT("[SERVIDOR] Aguardando conexão... (ConnectNamedPipe)\n"));
+		_tprintf(TEXT("[BOLSA] À espera da conexão...\nIntroduza um comando: "));
 
 
 		fConnected = ConnectNamedPipe(hPipe, NULL) ? TRUE : (GetLastError() == ERROR_PIPE_CONNECTED);
 
 		if (fConnected) {
-			_tprintf(TEXT("[SERVIDOR] Cliente conectado.\n"));
+			_tprintf(TEXT("[BOLSA] Cliente conectado!\nIntroduza um comando: "));
 			hThread = CreateThread(NULL, 0, InstanciaThread, (LPVOID)hPipe, 0, &dwThreadID);
 			if (hThread == NULL) {
-				_tprintf(TEXT("[ERRO] Falha ao criar a thread de cliente! (CreateThread)\n"));
+				_tprintf(TEXT("[ERRO] Falha ao criar a thread de cliente!\n"));
 				CloseHandle(hPipe);
 				exit(-1);
 			}
@@ -375,7 +376,7 @@ BOOL WINAPI ConectarClientes() {
 			}
 		}
 		else {
-			_tprintf(TEXT("[ERRO] Falha ao conectar ao pipe! (ConnectNamedPipe)\n"));
+			_tprintf(TEXT("[ERRO] Falha a conectar ao pipe!\n"));
 			CloseHandle(hPipe);
 		}
 	}
@@ -407,15 +408,15 @@ int _tmain(int argc, TCHAR* argv[]) {
 	TCHAR fileName[] = _T("utilizadores.txt");
 	errno_t err = _wfopen_s(&file, fileName, _T("r"));
 	if (err != 0 || file == NULL) {
-		_tprintf(_T("Erro ao abrir o arquivo.\n"));
+		_tprintf(_T("Erro ao abrir o ficheiro.\n"));
 		return 1;
 	}
-	_tprintf(_T("Arquivo aberto com sucesso.\n"));
+	_tprintf(_T("Ficheiro aberto com sucesso.\n"));
 	int i = 0;
 	while (i < MAX_USERS && fwscanf_s(file, _T("%s %s %f"), users[i].username, _countof(users[i].username), users[i].password, _countof(users[i].password), &users[i].saldo) == 3) {
 		// Exibir os dados lidos
 		_tprintf(_T("Nome: %s\n"), users[i].username);
-		_tprintf(_T("Senha: %s\n"), users[i].password);
+		_tprintf(_T("Password: %s\n"), users[i].password);
 		_tprintf(_T("Saldo: %.2f\n\n"), users[i].saldo);
 		i++;
 	}
@@ -454,7 +455,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 	while (TRUE) {
 		TCHAR next_param = NULL;
 		TCHAR command[50];
-		_tprintf(TEXT("Introduza um comando: "));
+		//_tprintf(TEXT("Introduza um comando: "));
 		_getts_s(&command, 50);
 
 		TCHAR* cmd = _tcstok_s(command, TEXT(" "), &next_param);
@@ -464,26 +465,27 @@ int _tmain(int argc, TCHAR* argv[]) {
 			TCHAR* thirdParam = _tcstok_s(NULL, TEXT(" "), &next_param);
 
 			if (firstParam == NULL || secondParam == NULL || thirdParam == NULL) {
-				_tprintf(TEXT("\nComando não reconhecido!\n"));
-				return;
+				_tprintf(TEXT("\nComando não reconhecido!\nIntroduza um comando: "));
+				//return;
 			}
+			else {
 
-			float second = _tstof(secondParam);
-			float third = _tstof(thirdParam);
+				float second = _tstof(secondParam);
+				float third = _tstof(thirdParam);
 
-			add_empresa(&sharedMemory, firstParam, second, third);
-			updateInfo(&sharedMemory);
-
+				add_empresa(&sharedMemory, firstParam, second, third);
+				updateInfo(&sharedMemory);
+			}
 		}
-		if(_tcscmp(cmd, TEXT("listc")) == 0) {
+		else if(_tcscmp(cmd, TEXT("listc")) == 0) {
 			list_empresas(&sharedMemory);
 		}
-		if(_tcscmp(cmd, TEXT("stock")) == 0) {
+		else if(_tcscmp(cmd, TEXT("stock")) == 0) {
 			TCHAR* firstParam = _tcstok_s(NULL, TEXT(" "), &next_param);
 			TCHAR* secondParam = _tcstok_s(NULL, TEXT(" "), &next_param);
 
 			if (firstParam == NULL || secondParam == NULL) {
-				_tprintf(TEXT("\nComando não reconhecido!\n"));
+				_tprintf(TEXT("\nComando não reconhecido \n"));
 				return;
 			}
 
@@ -491,6 +493,9 @@ int _tmain(int argc, TCHAR* argv[]) {
 
 			stock(&sharedMemory, firstParam, second);
 			updateInfo(&sharedMemory);
+		}
+		else {
+			_tprintf(TEXT("\nComando não reconhecido!\nIntroduza um comando: "));
 		}
 
 	}

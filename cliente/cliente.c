@@ -1,7 +1,5 @@
 #include "cliente.h"
 
-
-
 int Envia(HANDLE hPipe) {
     DWORD cbBytesWrite = 0;
     BOOL fSuccess = FALSE;
@@ -16,11 +14,11 @@ int Envia(HANDLE hPipe) {
     OvW.hEvent = WriteReady;
     fSuccess = WriteFile(hPipe, &utilizador, Msg_Sz, &cbBytesWrite, &OvW);
     if (!fSuccess) {
-        _tprintf(TEXT("[ERRO] Falha ao enviar a mensagem! (WriteFile)\n"));
+        _tprintf(TEXT("[ERRO] Falha ao enviar a mensagem!\n"));
         return -1;
     }
     WaitForSingleObject(WriteReady, INFINITE);
-    _tprintf(TEXT("[CLIENTE] Mensagem enviada ao servidor!\n"));
+    _tprintf(TEXT("[CLIENTE] Mensagem enviada à bolsa!\n"));
     return 0;
 }
 
@@ -36,7 +34,7 @@ int Recebe(HANDLE hPipe) {
 
     fSuccess = ReadFile(hPipe, &utilizador, Msg_Sz, &cbBytesRead, &OvR);
     if (!fSuccess && GetLastError() != ERROR_IO_PENDING) {
-        _tprintf(TEXT("[ERRO] Falha ao receber a mensagem! (ReadFile)\n"));
+        _tprintf(TEXT("[ERRO] Falha ao receber a mensagem!\n"));
         return -1;
     }
     // Verifica se a opera  o est  pendente (n o h  dados imediatamente dispon veis)
@@ -46,11 +44,11 @@ int Recebe(HANDLE hPipe) {
         // Verifica se a opera  o foi conclu da com sucesso
         fSuccess = GetOverlappedResult(hPipe, &OvR, &cbBytesRead, FALSE);
         if (!fSuccess) {
-            _tprintf(TEXT("[ERRO] Falha na leitura do pipe! (GetOverlappedResult)\n"));
+            _tprintf(TEXT("[ERRO] Falha na leitura do pipe!\n"));
             return -1;
         }
     }
-    _tprintf(TEXT("[CLIENTE] Mensagem recebida do servidor!\n"));
+    _tprintf(TEXT("[CLIENTE] Mensagem da bolsa recebida!\n"));
     return 0;
 }
 
@@ -72,14 +70,14 @@ int _tmain(int argc, LPTSTR argv[]) {
 
     hPipe = CreateFile(PIPE_NAME_CLIENTS, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
     if (hPipe == INVALID_HANDLE_VALUE) {
-        _tprintf(TEXT("[ERRO] Falha ao conectar-se ao servidor! (CreateFile)\n"));
+        _tprintf(TEXT("[ERRO] Falha na conexão à bolsa!\n"));
         return -1;
     }
     if (!WaitNamedPipe(PIPE_NAME_CLIENTS, 30000)) {
-        _tprintf(TEXT("[ERRO] Falha ao conectar-se ao servidor! (WaitNamedPipe)\n"));
+        _tprintf(TEXT("[ERRO] Falha na conexão à bolsa\n"));
         return -1;
     }
-    _tprintf(TEXT("[CLIENTE] Conectado ao servidor!\n Inicio... \n"));
+    _tprintf(TEXT("[CLIENTE] Bem vindo à bolsa de valores!\n"));
 
     
     TCHAR comando[MAX_TAM];
@@ -144,7 +142,7 @@ int _tmain(int argc, LPTSTR argv[]) {
                     _tprintf(TEXT("Login efetuado com sucesso!\nBem vindo: %s\t Saldo:%d"), utilizador.username,utilizador.saldo);
                 }
                 else {
-                    _tprintf(TEXT("Invalid username or password\n"));
+                    _tprintf(TEXT("Username ou password inválidos!\n"));
                 }
             }
             else if (_tcsicmp(argumentos[0], TEXT("exit")) != 0) {

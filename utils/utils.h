@@ -65,6 +65,7 @@ typedef struct {
 	HANDLE hPipe;
 
 	BOOL pausedBolsa;
+	int seconds;
 }SharedData;
 
 typedef struct {

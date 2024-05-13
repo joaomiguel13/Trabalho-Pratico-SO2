@@ -61,11 +61,6 @@ BOOL initSharedMemory_Sync(SharedMemory* sharedMemory) {
 
 
 
-
-//Este programa apresenta imediatamente as informações descritas na Secção 2(comandos) e apenas deve disponibilizar ao
-//utilizador uma forma de proceder ao seu encerramento.
-
-
 int _tmain(int argc, TCHAR* argv[]) {
 #ifdef UNICODE
 	_setmode(_fileno(stdin), _O_WTEXT);

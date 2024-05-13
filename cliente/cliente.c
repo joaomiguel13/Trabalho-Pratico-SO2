@@ -1,5 +1,21 @@
 #include "cliente.h"
 
+BOOL isBolsaRunning() {
+    HANDLE hMutex = CreateMutex(NULL, FALSE, MUTEX_NAME);
+
+    if (GetLastError() == ERROR_ALREADY_EXISTS) {
+        _tprintf(TEXT("================================="));
+        _tprintf(TEXT("\n|        [CLIENTE]      |"));
+        _tprintf(TEXT("\n================================\n"));
+        return FALSE;
+    }
+    else {
+        CloseHandle(hMutex);
+        _tprintf(TEXT("Não exite nenhuma bolsa a correr!\n"));
+        return TRUE;
+    }
+}
+
 void listaEmpresas() {
     _tprintf(TEXT("================================="));
     _tprintf(TEXT("\n|        EMPRESAS EXISTENTES      |"));
@@ -81,6 +97,8 @@ int _tmain() {
     _setmode(_fileno(stderr), _O_WTEXT);
 #endif
     utilizador.login = FALSE;
+
+    isBolsaRunning();
 
     hPipe = CreateFile(PIPE_NAME_CLIENTS, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
     if (hPipe == INVALID_HANDLE_VALUE) {

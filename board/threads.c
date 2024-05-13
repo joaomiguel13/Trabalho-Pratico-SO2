@@ -26,7 +26,6 @@ BOOL WINAPI receiveInfoFromBolsa(LPVOID p) {
 
 
 		ResetEvent(sharedMemory->hEventUpdateBoard);
-
 	}
 
 	return TRUE;

@@ -214,13 +214,13 @@ void WINAPI pause(LPVOID p) {
 	}
 }
 
-//void close(SharedMemory* sharedMemory) {
-	//_tprintf(TEXT("A bolsa de valores foi terminada!\n"));
-	//CloseHandle(sharedMemory->hMapFile);
-	//CloseHandle(sharedMemory->hMutexUpdateBoard);
-	//CloseHandle(sharedMemory->hEventUpdateBoard);
+void closee(SharedMemory* sharedMemory) {
+	_tprintf(TEXT("A bolsa de valores foi terminada!\n"));
+	CloseHandle(sharedMemory->hMapFile);
+	CloseHandle(sharedMemory->hMutexUpdateBoard);
+	CloseHandle(sharedMemory->hEventUpdateBoard);
 	//CloseHandle(sharedMemory->hEventInPause);
-//}
+}
 
 void readFileEmpresas(SharedMemory* sharedMemory) {
 	FILE* file;
@@ -354,11 +354,10 @@ DWORD WINAPI InstanciaThread(LPVOID lpParam) {
 									sharedMemory->sharedData->users[j].saldo -= utilizador.qtAcoes * sharedMemory->sharedData->empresas[i].precoAcao;
 									utilizador.saldo = sharedMemory->sharedData->users[j].saldo;
 									utilizador.Sucesso = TRUE;
-									updateInfo(&sharedMemory);
-
 									wcscpy_s(sharedMemory->sharedData->lastTransacao.empresa.nome, _countof(sharedMemory->sharedData->lastTransacao.empresa.nome), utilizador.NomeEmpresa);
 									sharedMemory->sharedData->lastTransacao.numAcoes = sharedMemory->sharedData->empresas[i].acoesDisponiveis;
 									sharedMemory->sharedData->lastTransacao.precoAcoes = sharedMemory->sharedData->empresas[i].precoAcao;
+									updateInfo(&sharedMemory);
 									break;
 								}
 								j++;
@@ -398,7 +397,6 @@ DWORD WINAPI InstanciaThread(LPVOID lpParam) {
 								wcscpy_s(sharedMemory->sharedData->lastTransacao.empresa.nome, _countof(sharedMemory->sharedData->lastTransacao.empresa.nome), utilizador.NomeEmpresa);
 								sharedMemory->sharedData->lastTransacao.numAcoes = sharedMemory->sharedData->empresas[i].acoesDisponiveis;
 								sharedMemory->sharedData->lastTransacao.precoAcoes = sharedMemory->sharedData->empresas[i].precoAcao;
-								updateInfo(&sharedMemory);
 								break;
 							}
 							j++;
@@ -410,6 +408,7 @@ DWORD WINAPI InstanciaThread(LPVOID lpParam) {
 						utilizador.Sucesso = FALSE;
 					}
 				}
+
 			}
 			else {
 				utilizador.Sucesso = FALSE;
@@ -417,7 +416,7 @@ DWORD WINAPI InstanciaThread(LPVOID lpParam) {
 				_tprintf(TEXT("Operações de compra e venda suspensas!\n"));
 			}
 				
-			
+			updateInfo(&sharedMemory);
 			WriteClienteASINC(hPipe);
 
 		}
@@ -600,11 +599,11 @@ int _tmain(int argc, TCHAR* argv[]) {
 			//wcscpy_s(firstParam, _countof(firstParam), argumentos[1]);
 			DWORD second = _wtoi(argumentos[2]);
 			float third = _tstof(argumentos[3]);
-
 			add_empresa(&sharedMemory, argumentos[1], second, third);
 			updateInfo(&sharedMemory);
 		}
 		else if (_tcscmp(argumentos[0], TEXT("listc")) == 0 && nArgs == 0) {
+			updateInfo(&sharedMemory);
 			list_empresas(&sharedMemory);
 		}
 		else if (_tcscmp(argumentos[0], TEXT("stock")) == 0 && nArgs == 2) {
@@ -614,6 +613,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 			updateInfo(&sharedMemory);
 		}
 		else if (_tcscmp(argumentos[0], TEXT("users")) == 0 && nArgs==0) {
+			updateInfo(&sharedMemory);
 			list_users(&sharedMemory);
 		}
 		else if (_tcscmp(argumentos[0], TEXT("pause")) == 0 && nArgs == 1) {
@@ -624,13 +624,14 @@ int _tmain(int argc, TCHAR* argv[]) {
 			threadsBolsa.hThreads[1] = CreateThread(NULL, 0, pause, &sharedMemory, 0, NULL);
 			//TerminateThread(threadsBolsa.hThreads[1], 0);
 		}
-		else if (_tcsicmp(argumentos[0], TEXT("close")) != 0) {
+		else if (_tcsicmp(argumentos[0], TEXT("close")) == 0) {
 			//TEMOS DE FAZER PARA MANDAR A MENSAGEM PARA TODOS OS CLIENTES QUE A BOLSA VAI FECHAR
-			_tprintf(TEXT("Comando inválido\n"));
+			closee(&sharedMemory);
 		}
-		updateInfo(&sharedMemory);
+		else {
+			_tprintf(TEXT("Comando inválido!\n"));
+			updateInfo(&sharedMemory);
+		}
 	} while (_tcsicmp(argumentos[0], TEXT("close")) != 0);
-	close(sharedMemory.sharedData->hPipe);
 	return 0;
-
 }

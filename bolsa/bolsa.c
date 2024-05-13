@@ -188,6 +188,7 @@ void list_users(SharedMemory* sharedMemory) {
 	}
 }
 
+
 void WINAPI pause(LPVOID p) {
 	SharedMemory* sharedMemory = (SharedMemory*)p;
 
@@ -195,10 +196,19 @@ void WINAPI pause(LPVOID p) {
 
 	if (!sharedMemory->sharedData->pausedBolsa) {
 		sharedMemory->sharedData->pausedBolsa = TRUE;
-		_tprintf(TEXT("Operações de compra e venda suspensas durante %d segundos!\nIntroduza um comando: "), sharedMemory->sharedData->seconds);
-		Sleep(sharedMemory->sharedData->seconds * 1000);
+		int remainingSeconds = sharedMemory->sharedData->seconds;
+
+		while (remainingSeconds > 0) {
+			Sleep(1000);
+			remainingSeconds--;
+		}
+
 		sharedMemory->sharedData->pausedBolsa = FALSE;
 		ResetEvent(sharedMemory->hEventRunning);
+		ExitThread(0);
+	}
+	else {
+		_tprintf(TEXT("Operações de compra e venda suspensas!\nIntroduza um comando: "));
 	}
 }
 

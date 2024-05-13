@@ -301,14 +301,15 @@ DWORD WINAPI InstanciaThread(LPVOID lpParam) {
 					sharedMemory->sharedData->users[i].hPipe = hPipe;
 					_tprintf(_T("\nUsername: %s\n"), utilizador.username);
 					_tprintf(_T("\nPassword: %s\n"), utilizador.password);
-					WriteClienteASINC(hPipe);
 					break;
 				}
 				i++;
 			}
 			if (!utilizador.login) {
+				utilizador.login = FALSE;
 				_tprintf(_T("Username ou password incorretos\n"));
 			}
+			WriteClienteASINC(hPipe);
 		}
 		else if (utilizador.tipo == 1) {
 			//MANDAR A LISTA DE EMPRESAS

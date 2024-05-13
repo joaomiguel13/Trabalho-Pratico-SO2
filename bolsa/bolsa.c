@@ -129,9 +129,10 @@ void initBolsa(SharedMemory* sharedMemory) {
 	sharedMemory->sharedData->seconds = 0;
 }
 
-void add_empresa(SharedMemory* sharedMemory, TCHAR* nomeEmpresa, DWORD numAcoes, float precoAcao) {
+void add_empresa(SharedMemory* sharedMemory, TCHAR *nomeEmpresa, DWORD numAcoes, float precoAcao) {
+	
 	if (sharedMemory->sharedData->numEmpresas < MAX_EMPRESAS) {
-		for (int i = 0; i < sharedMemory->sharedData->numEmpresas + 1; i++) {
+		for (int i = 0; i < sharedMemory->sharedData->numEmpresas; i++) {
 			if (_tcscmp(sharedMemory->sharedData->empresas[i].nome, nomeEmpresa) == 0) {
 				_tprintf(TEXT("Empresa ja existente!\nIntroduza um comando:"));
 				return;
@@ -141,6 +142,7 @@ void add_empresa(SharedMemory* sharedMemory, TCHAR* nomeEmpresa, DWORD numAcoes,
 		sharedMemory->sharedData->empresas[sharedMemory->sharedData->numEmpresas].acoesDisponiveis = numAcoes;
 		sharedMemory->sharedData->empresas[sharedMemory->sharedData->numEmpresas].precoAcao = precoAcao;
 		sharedMemory->sharedData->numEmpresas++;
+		_tprintf(TEXT("Empresa %s adicionada com sucesso!\n"));
 	}
 	else
 		_tprintf(TEXT("Numero maximo de empresas atingido!\nIntroduza um comando:"));
@@ -155,7 +157,7 @@ void list_empresas(SharedMemory* sharedMemory) {
 		_tprintf(TEXT("Nome: %s\n"), sharedMemory->sharedData->empresas[i].nome);
 		_tprintf(TEXT("Preço da ação: %.2f\n"), sharedMemory->sharedData->empresas[i].precoAcao);
 		_tprintf(TEXT("Ações disponíveis: %d\n"), sharedMemory->sharedData->empresas[i].acoesDisponiveis);
-		_tprintf(TEXT("=================================\nIntroduza Um comando:"));
+		_tprintf(TEXT("=================================\n"));
 	}
 }
 
@@ -578,73 +580,57 @@ int _tmain(int argc, TCHAR* argv[]) {
 	}*/
 	threadsBolsa.hThreads[0] = CreateThread(NULL, 0, ConectarClientes, (LPVOID)&sharedMemory, 0, NULL);
 
-
-
-	while (TRUE) {
-		TCHAR next_param = NULL;
-		TCHAR command[50];
+	TCHAR context[MAX_TAM];
+	TCHAR comando[MAX_TAM];
+	TCHAR* argumentos[MAX_TAM];
+	TCHAR firstParam[MAX_TAM];
+	int nArgs;
+	do{
+		nArgs = 0;
 		_tprintf(TEXT("Introduza um comando: "));
-		_getts_s(&command, 50);
-
-		TCHAR* cmd = _tcstok_s(command, TEXT(" "), &next_param);
-		if (_tcscmp(cmd, TEXT("addc")) == 0) {
-			TCHAR* firstParam = _tcstok_s(NULL, TEXT(" "), &next_param);
-			TCHAR* secondParam = _tcstok_s(NULL, TEXT(" "), &next_param);
-			TCHAR* thirdParam = _tcstok_s(NULL, TEXT(" "), &next_param);
-
-			if (firstParam == NULL || secondParam == NULL || thirdParam == NULL) {
-				_tprintf(TEXT("\nComando não reconhecido!\n"));
-				return;
-			}
-
-			DWORD second = _wtoi(secondParam);
-			float third = _tstof(thirdParam);
-
-			add_empresa(&sharedMemory, firstParam, second, third);
-			updateInfo(&sharedMemory);
-
+		_fgetts(comando, MAX_TAM, stdin);
+		comando[_tcslen(comando) - 1] = '\0'; // Remover o caractere de nova linha
+		argumentos[0] = _tcstok_s(comando, TEXT(" "), &context);
+		while (argumentos[nArgs] != NULL) {
+			argumentos[++nArgs] = _tcstok_s(NULL, TEXT(" "), &context);
 		}
-		else if (_tcscmp(cmd, TEXT("listc")) == 0) {
+		nArgs -= 1;
+
+		if (_tcscmp(argumentos[0], TEXT("addc")) == 0 && nArgs==3) {
+			//wcscpy_s(firstParam, _countof(firstParam), argumentos[1]);
+			DWORD second = _wtoi(argumentos[2]);
+			float third = _tstof(argumentos[3]);
+
+			add_empresa(&sharedMemory, argumentos[1], second, third);
+			updateInfo(&sharedMemory);
+		}
+		else if (_tcscmp(argumentos[0], TEXT("listc")) == 0 && nArgs == 0) {
 			list_empresas(&sharedMemory);
 		}
-		else if (_tcscmp(cmd, TEXT("stock")) == 0) {
-			TCHAR* firstParam = _tcstok_s(NULL, TEXT(" "), &next_param);
-			TCHAR* secondParam = _tcstok_s(NULL, TEXT(" "), &next_param);
-
-			if (firstParam == NULL || secondParam == NULL) {
-				_tprintf(TEXT("\nComando não reconhecido!\n"));
-				return;
-			}
-
-			float second = _tstof(secondParam);
-
+		else if (_tcscmp(argumentos[0], TEXT("stock")) == 0 && nArgs == 2) {
+			wcscpy_s(firstParam, _countof(firstParam), argumentos[1]);
+			DWORD second = _wtoi(argumentos[2]);
 			stock(&sharedMemory, firstParam, second);
 			updateInfo(&sharedMemory);
 		}
-		else if (_tcscmp(cmd, TEXT("users")) == 0) {
+		else if (_tcscmp(argumentos[0], TEXT("users")) == 0 && nArgs==0) {
 			list_users(&sharedMemory);
 		}
-		else if (_tcscmp(cmd, TEXT("pause")) == 0) {
-			TCHAR* firstParam = _tcstok_s(NULL, TEXT(" "), &next_param);
-
-			if (firstParam == NULL) {
-				_tprintf(TEXT("\nComando não reconhecido!\n"));
-				return;
-			}
-
-			DWORD second = _wtoi(firstParam);
-
+		else if (_tcscmp(argumentos[0], TEXT("pause")) == 0 && nArgs == 1) {
+			DWORD second = _wtoi(argumentos[1]);
 			//pause(&sharedMemory, second);
 			SetEvent(sharedMemory.hEventRunning);
 			sharedMemory.sharedData->seconds = second;
 			threadsBolsa.hThreads[1] = CreateThread(NULL, 0, pause, &sharedMemory, 0, NULL);
 			//TerminateThread(threadsBolsa.hThreads[1], 0);
-
 		}
-		else {
-			_tprintf(TEXT("\nComando não reconhecido!\n"));
+		else if (_tcsicmp(argumentos[0], TEXT("close")) != 0) {
+			//TEMOS DE FAZER PARA MANDAR A MENSAGEM PARA TODOS OS CLIENTES QUE A BOLSA VAI FECHAR
+			_tprintf(TEXT("Comando inválido\n"));
 		}
-	}
+		updateInfo(&sharedMemory);
+	} while (_tcsicmp(argumentos[0], TEXT("close")) != 0);
+	close(sharedMemory.sharedData->hPipe);
 	return 0;
 
 }

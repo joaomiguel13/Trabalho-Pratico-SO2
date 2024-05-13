@@ -45,7 +45,7 @@ typedef struct {
 
 typedef struct {
 	TCHAR tipo;
-	Empresa *empresa;
+	Empresa empresa;
 	User* user;
 	DWORD numAcoes;
 	float precoAcoes;

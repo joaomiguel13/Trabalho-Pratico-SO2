@@ -151,11 +151,22 @@ int _tmain() {
                 Envia(hPipe);
                 Recebe(hPipe);
 
-                if (utilizador.Sucesso == TRUE)
-                    _tprintf(TEXT("Comprou %d ações da empresa %s.\nSaldo: %.2f\n"), utilizador.qtAcoes, utilizador.NomeEmpresa, utilizador.saldo);
-                else
-                    _tprintf(TEXT("Não há ações suficientes,saldo insuficiente ou operações suspensas\n"));
-
+                if (utilizador.Sucesso == TRUE) {
+                    _tprintf(TEXT("Comprou %d ações a empresa %s.\nSaldo: %.2f\n"), utilizador.qtAcoes, utilizador.NomeEmpresa, utilizador.saldo);
+                }
+                else {
+                    if (utilizador.tipoResposta == 1)
+                        _tprintf(TEXT("Saldo Insuficiente!\n"));
+                    else if (utilizador.tipoResposta == 2) {
+                        _tprintf(TEXT("Não há ações suficientes\n"));
+                    }
+                    else if (utilizador.tipoResposta == 3) {
+                        _tprintf(TEXT("Empresa não encontrada\n"));
+                    }
+                    else if(utilizador.tipoResposta == 4) {
+						_tprintf(TEXT("Operações de compra e venda foram suspensas\n"));
+					}
+                }
             }
             else if (_tcsicmp(argumentos[0], TEXT("sell")) == 0 && nArgs == 2) {
                 utilizador.tipo = 3;
@@ -165,11 +176,16 @@ int _tmain() {
                 Envia(hPipe);
                 Recebe(hPipe);
 
-
                 if (utilizador.Sucesso == TRUE)
                     _tprintf(TEXT("Vendeu %d ações a empresa %s.\n Saldo: %.2f\n"), utilizador.qtAcoes, utilizador.NomeEmpresa, utilizador.saldo);
-                else
-                    _tprintf(TEXT("Empresa não encontrada ou operações suspensas\n"));
+                else {
+                    if (utilizador.tipoResposta == 3) {
+                        _tprintf(TEXT("Empresa não encontrada\n"));
+                    }
+                    else if (utilizador.tipoResposta == 4) {
+                        _tprintf(TEXT("Operações de compra e venda foram suspensas\n"));
+                    }
+                }
             }
             else if (_tcsicmp(argumentos[0], TEXT("balance")) == 0 && nArgs == 0) {
                 utilizador.tipo = 4;

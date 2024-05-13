@@ -319,15 +319,18 @@ DWORD WINAPI InstanciaThread(LPVOID lpParam) {
 					if (_tcscmp(utilizador.NomeEmpresa, sharedMemory->sharedData->empresas[i].nome) == 0) {
 						if (sharedMemory->sharedData->empresas[i].acoesDisponiveis == 0) {
 							utilizador.Sucesso = FALSE;
+							utilizador.tipoResposta = 2;
 							break;
 						}
 						else if (utilizador.qtAcoes > sharedMemory->sharedData->empresas[i].acoesDisponiveis) {
 							utilizador.Sucesso = FALSE;;
+							utilizador.tipoResposta = 2;
 							break;
 						}
 						else {
 							if (utilizador.qtAcoes * sharedMemory->sharedData->empresas[i].precoAcao > utilizador.saldo) {
 								utilizador.Sucesso = FALSE;
+								utilizador.tipoResposta = 1;
 								break;
 							}
 							sharedMemory->sharedData->empresas[i].acoesDisponiveis -= utilizador.qtAcoes;
@@ -340,9 +343,9 @@ DWORD WINAPI InstanciaThread(LPVOID lpParam) {
 									utilizador.Sucesso = TRUE;
 									updateInfo(&sharedMemory);
 
-									/*wcscpy_s(sharedMemory->sharedData->lastTransacao.empresa->nome, _countof(sharedMemory->sharedData->lastTransacao.empresa->nome), utilizador.NomeEmpresa);
+									wcscpy_s(sharedMemory->sharedData->lastTransacao.empresa.nome, _countof(sharedMemory->sharedData->lastTransacao.empresa.nome), utilizador.NomeEmpresa);
 									sharedMemory->sharedData->lastTransacao.numAcoes = sharedMemory->sharedData->empresas[i].acoesDisponiveis;
-									sharedMemory->sharedData->lastTransacao.precoAcoes = sharedMemory->sharedData->empresas[i].precoAcao;*/
+									sharedMemory->sharedData->lastTransacao.precoAcoes = sharedMemory->sharedData->empresas[i].precoAcao;
 									break;
 								}
 								j++;
@@ -350,10 +353,16 @@ DWORD WINAPI InstanciaThread(LPVOID lpParam) {
 							break;
 						}
 					}
+					else
+					{
+						utilizador.Sucesso = FALSE;
+						utilizador.tipoResposta = 3;
+					}
 				}
 			}
 			else {
 				utilizador.Sucesso = FALSE;
+				utilizador.tipoResposta = 4;
 				_tprintf(TEXT("Operações de compra e venda suspensas!\n"));
 			}
 
@@ -373,9 +382,9 @@ DWORD WINAPI InstanciaThread(LPVOID lpParam) {
 								sharedMemory->sharedData->users[j].saldo += (utilizador.qtAcoes * sharedMemory->sharedData->empresas[i].precoAcao);
 								utilizador.saldo = sharedMemory->sharedData->users[j].saldo;
 								utilizador.Sucesso = TRUE;
-								/*wcscpy_s(sharedMemory->sharedData->lastTransacao.empresa->nome, _countof(sharedMemory->sharedData->lastTransacao.empresa->nome), utilizador.NomeEmpresa);
+								wcscpy_s(sharedMemory->sharedData->lastTransacao.empresa.nome, _countof(sharedMemory->sharedData->lastTransacao.empresa.nome), utilizador.NomeEmpresa);
 								sharedMemory->sharedData->lastTransacao.numAcoes = sharedMemory->sharedData->empresas[i].acoesDisponiveis;
-								sharedMemory->sharedData->lastTransacao.precoAcoes = sharedMemory->sharedData->empresas[i].precoAcao;*/
+								sharedMemory->sharedData->lastTransacao.precoAcoes = sharedMemory->sharedData->empresas[i].precoAcao;
 								updateInfo(&sharedMemory);
 								break;
 							}
@@ -384,12 +393,14 @@ DWORD WINAPI InstanciaThread(LPVOID lpParam) {
 						break;
 					}
 					else {
+						utilizador.tipoResposta = 3;
 						utilizador.Sucesso = FALSE;
 					}
 				}
 			}
 			else {
 				utilizador.Sucesso = FALSE;
+				utilizador.tipoResposta = 4;
 				_tprintf(TEXT("Operações de compra e venda suspensas!\n"));
 			}
 				

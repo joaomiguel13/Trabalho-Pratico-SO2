@@ -15,14 +15,18 @@ typedef struct {
 	TCHAR password[20];
 	double saldo;
 	//----------------
+	int tipoResposta; // 1 saldo insuficiente, 2 Não há ações suficientes,3 empresa nao existe
+	//---------------
 	BOOL Sucesso;
 	TCHAR NomeEmpresa[20];
 	DWORD qtAcoes;
+	//---------------
 	int numEmpresas;
 	//---------------
 	Empresas empresas[MAX_EMPRESAS];
 }NovosUsers;
 NovosUsers utilizador;
+
 
 
 

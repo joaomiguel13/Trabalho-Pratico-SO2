@@ -100,7 +100,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 		return -1;
 	}
 
-while (TRUE) {
+	while (TRUE) {
 
 	}
 }

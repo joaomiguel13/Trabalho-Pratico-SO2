@@ -30,8 +30,12 @@ typedef struct {
 	int numEmpresas;
 	//---------------
 	Empresas empresas[MAX_EMPRESAS];
+	//---------------
+	BOOL BOLSA;
 }NovosUsers;
 NovosUsers utilizador;
+
+BOOL SAIR;
 
 
 

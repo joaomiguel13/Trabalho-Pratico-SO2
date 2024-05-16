@@ -28,13 +28,19 @@
 #define Msg_Sz sizeof(utilizador)
 
 typedef struct {
+	TCHAR empresa[20];
+	DWORD qtAcoes;
+}Acoes;
+
+typedef struct {
 	TCHAR username[MAX_TAM];
 	TCHAR password[20];
 	float saldo;
 	BOOL login;
 	HANDLE hPipe;
 	DWORD dwThreadID;
-	//Acoes carteira[40]; //........ associar as acoes de compra
+	int nAcoes;
+	Acoes carteira[5]; //........ associar as acoes de compra
 } User;
 
 typedef struct {
@@ -51,11 +57,7 @@ typedef struct {
 	float precoAcoes;
 } Transacoes;
 
-typedef struct {
-	TCHAR empresa[20];
-	DWORD qtAcoes;
-	float qtAcoesEmpresa;
-}Acoes;
+
 
 typedef struct {
 	Empresa empresas[MAX_EMPRESAS];
@@ -89,3 +91,15 @@ typedef struct {
 	HANDLE hThreads[N_THREADS_BOARD];
 	HANDLE hEventCloseAllThreads;
 }ThreadsBoard;
+
+typedef struct {
+	HANDLE hEventoLer;
+}EventoLer;
+EventoLer eventoLer;
+
+#define N_THREADS_CLIENTE 2
+typedef struct {
+	HANDLE hThreads[N_THREADS_CLIENTE];
+	HANDLE hEventCloseAllThreads;
+	BOOL SAIR;
+}ThreadsCliente;

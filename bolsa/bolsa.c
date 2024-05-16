@@ -150,7 +150,7 @@ void add_empresa(SharedMemory* sharedMemory, TCHAR *nomeEmpresa, DWORD numAcoes,
 		sharedMemory->sharedData->empresas[sharedMemory->sharedData->numEmpresas].acoesDisponiveis = numAcoes;
 		sharedMemory->sharedData->empresas[sharedMemory->sharedData->numEmpresas].precoAcao = precoAcao;
 		sharedMemory->sharedData->numEmpresas++;
-		_tprintf(TEXT("Empresa %s adicionada com sucesso!\n"));
+		_tprintf(TEXT("Empresa %s adicionada com sucesso!\n"),nomeEmpresa);
 	}
 	else
 		_tprintf(TEXT("Numero maximo de empresas atingido!\nIntroduza um comando:"));
@@ -591,7 +591,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 	_setmode(_fileno(stdout), _O_WTEXT);
 	_setmode(_fileno(stderr), _O_WTEXT);
 #endif 
-
+	
 	HANDLE hThread;
 	DWORD DwThreadID;
 	BOOL fConnect = FALSE;
@@ -606,23 +606,25 @@ int _tmain(int argc, TCHAR* argv[]) {
 	}
 
 	//ler o ficheiro e guardar os utilizadores
-	FILE* file;
-	TCHAR fileName[] = _T("utilizadores.txt");
-	errno_t err = _wfopen_s(&file, fileName, _T("r"));
-	if (err != 0 || file == NULL) {
-		_tprintf(_T("Erro ao abrir o ficheiro.\n"));
-		return 1;
+	if (argv[1] != NULL) {
+		FILE* file;;
+		errno_t err = _wfopen_s(&file, argv[1], _T("r"));
+		if (err != 0 || file == NULL) {
+			_tprintf(_T("Erro ao abrir o ficheiro.\n"));
+			return 1;
+		}
+		_tprintf(_T("Ficheiro aberto com sucesso.\n"));
+		int i = 0;
+		while (i < MAX_USERS && fwscanf_s(file, _T("%s %s %f"), sharedMemory.sharedData->users[i].username, _countof(sharedMemory.sharedData->users[i].username), sharedMemory.sharedData->users[i].password, _countof(sharedMemory.sharedData->users[i].password), &sharedMemory.sharedData->users[i].saldo) == 3) {
+			// Exibir os dados lidos
+			_tprintf(_T("Nome: %s\n"), sharedMemory.sharedData->users[i].username);
+			_tprintf(_T("Senha: %s\n"), sharedMemory.sharedData->users[i].password);
+			_tprintf(_T("Saldo: %.2f\n\n"), sharedMemory.sharedData->users[i].saldo);
+			i++;
+		}
+		fclose(file);
 	}
-	_tprintf(_T("Ficheiro aberto com sucesso.\n"));
-	int i = 0;
-	while (i < MAX_USERS && fwscanf_s(file, _T("%s %s %f"), sharedMemory.sharedData->users[i].username, _countof(sharedMemory.sharedData->users[i].username), sharedMemory.sharedData->users[i].password, _countof(sharedMemory.sharedData->users[i].password), &sharedMemory.sharedData->users[i].saldo) == 3) {
-		// Exibir os dados lidos
-		_tprintf(_T("Nome: %s\n"), sharedMemory.sharedData->users[i].username);
-		_tprintf(_T("Senha: %s\n"), sharedMemory.sharedData->users[i].password);
-		_tprintf(_T("Saldo: %.2f\n\n"), sharedMemory.sharedData->users[i].saldo);
-		i++;
-	}
-	fclose(file);
+	
 	//---------------------------------------
 	initBolsa(&sharedMemory);
 	_tprintf(TEXT("Bolsa de valores iniciada!\n"));
@@ -666,12 +668,11 @@ int _tmain(int argc, TCHAR* argv[]) {
 			argumentos[++nArgs] = _tcstok_s(NULL, TEXT(" "), &context);
 		}
 		nArgs -= 1;
-
 		if (_tcscmp(argumentos[0], TEXT("addc")) == 0 && nArgs==3) {
-			//wcscpy_s(firstParam, _countof(firstParam), argumentos[1]);
+			wcscpy_s(firstParam, _countof(firstParam), argumentos[1]);
 			DWORD second = _wtoi(argumentos[2]);
 			float third = _tstof(argumentos[3]);
-			add_empresa(&sharedMemory, argumentos[1], second, third);
+			add_empresa(&sharedMemory, firstParam, second, third);
 			updateInfo(&sharedMemory);
 		}
 		else if (_tcscmp(argumentos[0], TEXT("listc")) == 0 && nArgs == 0) {

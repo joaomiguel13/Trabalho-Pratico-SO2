@@ -1,18 +1,26 @@
 #include "threads.h"
 
-/*BOOL WINAPI updateInfo(LPVOID p) {
 
+void WINAPI pause(LPVOID p) {
 	SharedMemory* sharedMemory = (SharedMemory*)p;
 
-	while (TRUE) {
-		WaitForSingleObject(sharedMemory->hMutexUpdateBoard, INFINITE);
+	WaitForSingleObject(sharedMemory->hEventRunning, INFINITE);
 
-		Sleep(1000);
+	if (!sharedMemory->sharedData->pausedBolsa) {
+		sharedMemory->sharedData->pausedBolsa = TRUE;
+		int remainingSeconds = sharedMemory->sharedData->seconds;
 
-		ReleaseMutex(sharedMemory->hMutexUpdateBoard);
+		while (remainingSeconds > 0) {
+			Sleep(1000);
+			remainingSeconds--;
+		}
 
-		SetEvent(sharedMemory->hEventRunning);
+		sharedMemory->sharedData->pausedBolsa = FALSE;
+		ResetEvent(sharedMemory->hEventRunning);
+		ExitThread(0);
 	}
+	else {
+		_tprintf(TEXT("Operações de compra e venda suspensas!\nIntroduza um comando: "));
+	}
+}
 
-	return TRUE;
-}*/

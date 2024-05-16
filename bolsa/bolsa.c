@@ -199,6 +199,29 @@ void list_users(SharedMemory* sharedMemory) {
 }
 
 
+void WINAPI pause(LPVOID p) {
+	SharedMemory* sharedMemory = (SharedMemory*)p;
+
+	WaitForSingleObject(sharedMemory->hEventRunning, INFINITE);
+
+	if (!sharedMemory->sharedData->pausedBolsa) {
+		sharedMemory->sharedData->pausedBolsa = TRUE;
+		int remainingSeconds = sharedMemory->sharedData->seconds;
+
+		while (remainingSeconds > 0) {
+			Sleep(1000);
+			remainingSeconds--;
+		}
+
+		sharedMemory->sharedData->pausedBolsa = FALSE;
+		ResetEvent(sharedMemory->hEventRunning);
+		ExitThread(0);
+	}
+	else {
+		_tprintf(TEXT("Operações de compra e venda suspensas!\nIntroduza um comando: "));
+	}
+}
+
 void closee(SharedMemory* sharedMemory) {
 	CloseHandle(sharedMemory->hMapFile);
 	CloseHandle(sharedMemory->hMutexUpdateBoard);
@@ -618,6 +641,14 @@ int _tmain(int argc, TCHAR* argv[]) {
 	updateInfo(&sharedMemory);
 
 	ThreadsBolsa threadsBolsa;
+	//threadsBolsa.hEventCloseAllThreads = SharedData
+
+	//threadsBolsa.hThreads[1] = CreateThread(NULL, 0, closeALlThreads, &sharedMemory, 0, NULL);
+
+	/*if (threadsBolsa.hThreads[0] == NULL) {
+		_tprintf(TEXT("Erro ao criar a thread! [%d]\n"), GetLastError());
+		return -1;
+	}*/
 	threadsBolsa.hThreads[0] = CreateThread(NULL, 0, ConectarClientes, (LPVOID)&sharedMemory, 0, NULL);
 
 	TCHAR context[MAX_TAM];

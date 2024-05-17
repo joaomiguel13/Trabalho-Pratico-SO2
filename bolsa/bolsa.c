@@ -163,8 +163,8 @@ void list_empresas(SharedMemory* sharedMemory) {
 
 	for (int i = 0; i < sharedMemory->sharedData->numEmpresas; i++) {
 		_tprintf(TEXT("Nome: %s\n"), sharedMemory->sharedData->empresas[i].nome);
-		_tprintf(TEXT("Preço da ação: %.2f\n"), sharedMemory->sharedData->empresas[i].precoAcao);
-		_tprintf(TEXT("Ações disponíveis: %d\n"), sharedMemory->sharedData->empresas[i].acoesDisponiveis);
+		_tprintf(TEXT("Preco da acao: %.2f\n"), sharedMemory->sharedData->empresas[i].precoAcao);
+		_tprintf(TEXT("Acoes disponiveis: %d\n"), sharedMemory->sharedData->empresas[i].acoesDisponiveis);
 		_tprintf(TEXT("=================================\n"));
 	}
 }
@@ -173,11 +173,11 @@ void stock(SharedMemory* sharedMemory, TCHAR* nomeEmpresa, float precoAcao) {
 	for (int i = 0; i < sharedMemory->sharedData->numEmpresas; i++) {
 		if (_tcscmp(sharedMemory->sharedData->empresas[i].nome, nomeEmpresa) == 0) {
 			sharedMemory->sharedData->empresas[i].precoAcao = precoAcao;
-			_tprintf(TEXT("Preço da ação da empresa %s alterado para %.2f\n"), nomeEmpresa, precoAcao);
+			_tprintf(TEXT("Preco da acao da empresa %s alterado para %.2f\n"), nomeEmpresa, precoAcao);
 			return;
 		}
 	}
-	_tprintf(TEXT("Empresa não encontrada!\n"));
+	_tprintf(TEXT("Empresa nao encontrada!\n"));
 }
 
 void list_users(SharedMemory* sharedMemory) {
@@ -288,8 +288,8 @@ DWORD WINAPI InstanciaThread(LPVOID lpParam) {
 			if (!fSuccess) {
 				_tprintf(TEXT("[ERRO] Falha na leitura do pipe!\n"));
 				int j = 0;
+				WaitForSingleObject(hMutex, INFINITE);
 				while (1) {
-					WaitForSingleObject(hMutex, INFINITE);
 					if (_tcscmp(utilizador.username, sharedMemory->sharedData->users[j].username) == 0) {
 						sharedMemory->sharedData->users[j].login = FALSE;
 						sharedMemory->sharedData->users[j].hPipe = NULL;
@@ -306,7 +306,6 @@ DWORD WINAPI InstanciaThread(LPVOID lpParam) {
 		if (utilizador.login == FALSE) {
 			int i = 0;
 
-			//WaitForSingleObject(hMutex, INFINITE);
 			while (i < MAX_USERS)
 			{
 				if (_tcscmp(utilizador.username, sharedMemory->sharedData->users[i].username) == 0 && _tcscmp(utilizador.password, sharedMemory->sharedData->users[i].password) == 0) {
@@ -324,7 +323,6 @@ DWORD WINAPI InstanciaThread(LPVOID lpParam) {
 				utilizador.login = FALSE;
 				_tprintf(_T("Username ou password incorretos\n"));
 			}
-			//ReleaseMutex(hMutex);
 		}
 		else if (utilizador.tipo == 1) {
 			//MANDAR A LISTA DE EMPRESAS
@@ -335,7 +333,6 @@ DWORD WINAPI InstanciaThread(LPVOID lpParam) {
 				utilizador.empresas[i].acoesDisponiveis = sharedMemory->sharedData->empresas[i].acoesDisponiveis;
 				utilizador.empresas[i].precoAcao = sharedMemory->sharedData->empresas[i].precoAcao;
 			}
-			//ReleaseMutex(hMutex);
 		}
 		else if (utilizador.tipo == 2) {
 			//fazer a compra de acoes
@@ -343,7 +340,6 @@ DWORD WINAPI InstanciaThread(LPVOID lpParam) {
 			BOOL EMPRESA = FALSE,ACOES=FALSE,SALDO =FALSE;
 			int n;
 			int aux = 0;
-			//WaitForSingleObject(hMutex, INFINITE);
 			utilizador.Sucesso= FALSE;
 			if (sharedMemory->sharedData->pausedBolsa == FALSE) { // Verificar se a bolsa está em pausa
 				for (int i = 0; i < MAX_USERS && !x; i++) {
@@ -403,12 +399,14 @@ DWORD WINAPI InstanciaThread(LPVOID lpParam) {
 							}
 							sharedMemory->sharedData->empresas[n].acoesDisponiveis -= utilizador.qtAcoes;
 							sharedMemory->sharedData->users[i].saldo -= utilizador.qtAcoes * sharedMemory->sharedData->empresas[n].precoAcao;
+							sharedMemory->sharedData->empresas[n].precoAcao += ((utilizador.qtAcoes *sharedMemory->sharedData->empresas[n].acoesDisponiveis) * 0.1);
 							utilizador.saldo = sharedMemory->sharedData->users[i].saldo;
 							utilizador.Sucesso = TRUE;
 							// Guardar a última transação
 							wcscpy_s(sharedMemory->sharedData->lastTransacao.empresa.nome, _countof(sharedMemory->sharedData->lastTransacao.empresa.nome), utilizador.NomeEmpresa);
 							sharedMemory->sharedData->lastTransacao.numAcoes = sharedMemory->sharedData->empresas[n].acoesDisponiveis;
 							sharedMemory->sharedData->lastTransacao.precoAcoes = sharedMemory->sharedData->empresas[n].precoAcao;
+
 							//----------------
 							break;
 						}
@@ -417,10 +415,8 @@ DWORD WINAPI InstanciaThread(LPVOID lpParam) {
 			}
 			else {
 				utilizador.tipoResposta = 4;
-				_tprintf(TEXT("Operações de compra e venda suspensas!\n"));
+				_tprintf(TEXT("Operacoes de compra e venda suspensas!\n"));
 			}
-			updateInfo(&sharedMemory);
-			//ReleaseMutex(hMutex);
 		}
 		else if (utilizador.tipo == 3) {
 			//fazer a venda de acoes
@@ -428,7 +424,6 @@ DWORD WINAPI InstanciaThread(LPVOID lpParam) {
 			BOOL EMPRESA = FALSE, ACOES = FALSE; //empresa == true se a empresa existir 
 			int n;
 			int aux = 0;
-			//WaitForSingleObject(hMutex, INFINITE);
 			utilizador.Sucesso = FALSE;
 			if (sharedMemory->sharedData->pausedBolsa == FALSE) { // Verificar se a bolsa está em pausa
 				for (int i = 0; i < MAX_USERS && !x; i++) {
@@ -473,6 +468,7 @@ DWORD WINAPI InstanciaThread(LPVOID lpParam) {
 							}
 							sharedMemory->sharedData->empresas[n].acoesDisponiveis += utilizador.qtAcoes;
 							sharedMemory->sharedData->users[i].saldo += utilizador.qtAcoes * sharedMemory->sharedData->empresas[n].precoAcao;
+							sharedMemory->sharedData->empresas[n].precoAcao -= ((sharedMemory->sharedData->empresas[n].acoesDisponiveis * utilizador.qtAcoes) * 0.1);
 							utilizador.saldo = sharedMemory->sharedData->users[i].saldo;
 							utilizador.Sucesso = TRUE;
 							// Guardar a última transação
@@ -487,15 +483,12 @@ DWORD WINAPI InstanciaThread(LPVOID lpParam) {
 			}
 			else {
 				utilizador.tipoResposta = 4;
-				_tprintf(TEXT("Operações de compra e venda suspensas!\n"));
+				_tprintf(TEXT("Operacoes de compra e venda suspensas!\n"));
 			}
-			updateInfo(&sharedMemory);
-			//ReleaseMutex(hMutex);
 		}
 		else if (utilizador.tipo == 4) {
 			//ver o saldo
 			int i = 0;
-			//WaitForSingleObject(hMutex, INFINITE);
 			while (i < MAX_USERS)
 			{
 				if (_tcscmp(utilizador.username, sharedMemory->sharedData->users[i].username) == 0 && _tcscmp(utilizador.password, sharedMemory->sharedData->users[i].password) == 0) {
@@ -504,7 +497,6 @@ DWORD WINAPI InstanciaThread(LPVOID lpParam) {
 				}
 				i++;
 			}
-			//ReleaseMutex(hMutex);
 		}
 		
 		updateInfo(&sharedMemory);
@@ -550,7 +542,7 @@ BOOL WINAPI ConectarClientes(LPVOID lpParam) {
 	HANDLE hThread;
 	DWORD dwThreadID;
 
-	_tprintf(TEXT("\n[BOLSA] À espera de clientes...\nIntroduza um comando:\n"));
+	_tprintf(TEXT("\n[BOLSA] A espera de clientes...\nIntroduza um comando:\n"));
 
 	while (1) {
 		hPipe = CreateNamedPipe(PIPE_NAME_CLIENTS, PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED, PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT, MAX_USERS, MAX_TAM, MAX_TAM, 5000, NULL);
@@ -558,7 +550,7 @@ BOOL WINAPI ConectarClientes(LPVOID lpParam) {
 			_tprintf(TEXT("[ERRO] Falha ao criar o Named Pipe!\n"));
 			exit(-1);
 		}
-		_tprintf(TEXT("\n[BOLSA] À espera de conexão...\nIntroduza um comando:"));
+		_tprintf(TEXT("\n[BOLSA] A espera de conexao...\nIntroduza um comando:"));
 		sharedMemory->sharedData->hPipe = hPipe;
 
 		fConnected = ConnectNamedPipe(hPipe, NULL) ? TRUE : (GetLastError() == ERROR_PIPE_CONNECTED);
@@ -635,22 +627,13 @@ int _tmain(int argc, TCHAR* argv[]) {
 		updateInfo(&sharedMemory);
 	}
 	else if (_tcscmp(opcao, TEXT("N")) == 0 || _tcscmp(opcao, TEXT("n")) == 0) {
-		_tprintf(TEXT("Empresas não carregadas!\n"));
+		_tprintf(TEXT("Empresas nao carregadas!\n"));
 	}
 	else {
-		_tprintf(TEXT("Opção inválida!\n"));
+		_tprintf(TEXT("Opcao invalida!\n"));
 	}
 	updateInfo(&sharedMemory);
-
 	ThreadsBolsa threadsBolsa;
-	//threadsBolsa.hEventCloseAllThreads = SharedData
-
-	//threadsBolsa.hThreads[1] = CreateThread(NULL, 0, closeALlThreads, &sharedMemory, 0, NULL);
-
-	/*if (threadsBolsa.hThreads[0] == NULL) {
-		_tprintf(TEXT("Erro ao criar a thread! [%d]\n"), GetLastError());
-		return -1;
-	}*/
 	threadsBolsa.hThreads[0] = CreateThread(NULL, 0, ConectarClientes, (LPVOID)&sharedMemory, 0, NULL);
 
 	TCHAR context[MAX_TAM];
@@ -695,11 +678,10 @@ int _tmain(int argc, TCHAR* argv[]) {
 			SetEvent(sharedMemory.hEventRunning);
 			sharedMemory.sharedData->seconds = second;
 			threadsBolsa.hThreads[1] = CreateThread(NULL, 0, pause, &sharedMemory, 0, NULL);
-			//TerminateThread(threadsBolsa.hThreads[1], 0);
 		}
 		else if (_tcsicmp(argumentos[0], TEXT("close")) != 0) {
 			//TEMOS DE FAZER PARA MANDAR A MENSAGEM PARA TODOS OS CLIENTES QUE A BOLSA VAI FECHAR
-			_tprintf(TEXT("Comando inválido!\n"));
+			_tprintf(TEXT("Comando invalido!\n"));
 		}
 	} while (_tcsicmp(argumentos[0], TEXT("close")) != 0);
 	utilizador.BOLSA = TRUE;

@@ -19,9 +19,6 @@ BOOL isBolsaRunning() {
 }
 
 BOOL updateInfo(SharedMemory* sharedMemory) {
-	/*WaitForSingleObject(sharedMemory->hMutexUpdateBoard, INFINITE);
-
-	ReleaseMutex(sharedMemory->hMutexUpdateBoard); */
 
 
 	SetEvent(sharedMemory->hEventUpdateBoard);
@@ -499,7 +496,7 @@ DWORD WINAPI InstanciaThread(LPVOID lpParam) {
 			}
 		}
 		
-		updateInfo(&sharedMemory);
+		updateInfo(sharedMemory);
 		WriteClienteASINC(hPipe);
 		ReleaseMutex(hMutex);
 	}

@@ -1,5 +1,17 @@
 #include "threads.h"
 
+int comparaEmpresas(Empresa empresas[], int numEmpresas) {
+	for (int i = 1; i < numEmpresas; i++){
+		Empresa temp = empresas[i];
+		int j = i - 1;
+		while(j >= 0 && empresas[j].precoAcao < temp.precoAcao) {
+			empresas[j + 1] = empresas[j];
+			j--;
+		}
+		empresas[j + 1] = temp;
+	}
+}
+
 BOOL WINAPI receiveInfoFromBolsa(LPVOID p) {
 	SharedMemory* sharedMemory = (SharedMemory*)p;
 
@@ -8,7 +20,9 @@ BOOL WINAPI receiveInfoFromBolsa(LPVOID p) {
 	
 		system("cls");
 		_tprintf(_T("=============================\n"));
+
 		for(int i = 0; i < numMaxEmpresas; i++) {
+			comparaEmpresas(sharedMemory->sharedData->empresas, sharedMemory->sharedData->numEmpresas);
 			if (i + 1 <= sharedMemory->sharedData->numEmpresas) {
 				_tprintf(_T("Empresa %d\n"), i);
 				_tprintf(_T("Nome: %s\n"), sharedMemory->sharedData->empresas[i].nome);

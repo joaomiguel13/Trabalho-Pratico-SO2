@@ -495,6 +495,9 @@ DWORD WINAPI InstanciaThread(LPVOID lpParam) {
 				i++;
 			}
 		}
+		else if (utilizador.tipo == 6) {
+			//fecha a board
+		}
 		
 		updateInfo(sharedMemory);
 		WriteClienteASINC(hPipe);

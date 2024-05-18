@@ -150,6 +150,9 @@ BOOL WINAPI Recebe(LPVOID lpParam) {
                     else if (utilizador.tipo == 5) {
                         _tprintf_s(TEXT("Operações de compra e venda foram suspensas\n"));
                     }
+                    else if (utilizador.tipo == 6) {
+                        _tprintf_s(TEXT("Board fechada!\n"));
+                    }
                 }
             }
         }
@@ -217,6 +220,10 @@ BOOL WINAPI Comandos(LPVOID lpParam) {
             }
             else if (_tcsicmp(argumentos[0], TEXT("balance")) == 0 && nArgs == 0) {
                 utilizador.tipo = 4;
+                Envia(hPipe);
+            }
+            else if (_tcscmp(argumentos[0], TEXT("closeboard")) == 0 && nArgs == 0) {
+                utilizador.tipo = 6;
                 Envia(hPipe);
             }
             else if (_tcsicmp(argumentos[0], TEXT("exit")) != 0) {

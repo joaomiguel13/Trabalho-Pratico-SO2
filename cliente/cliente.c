@@ -260,6 +260,19 @@ int _tmain() {
     _setmode(_fileno(stdout), _O_WTEXT);
     _setmode(_fileno(stderr), _O_WTEXT);
 #endif
+
+    //HANDLE hSemaphore;
+    /*HANDLE hSemaphore = CreateSemaphore(NULL, 0, MAX_USERS, TEXT("MyNamedSemaphore"));
+    _tprintf(_T("MAX_USERS:%d"), MAX_USERS);
+    if (hSemaphore == NULL) {
+        _tprintf(TEXT("[ERRO] Falha ao criar o semaforo!\n"));
+        return -1;
+    }
+    if (WaitForSingleObject(hSemaphore, 0) == WAIT_TIMEOUT) {
+        _tprintf(TEXT("Numero maximo de clientes atingiado! A espera por uma vaga...\n"));
+        WaitForSingleObject(hSemaphore, INFINITE);
+    }*/
+
     utilizador.login = FALSE;
     utilizador.BOLSA = FALSE;
     isBolsaRunning();
@@ -288,5 +301,6 @@ int _tmain() {
     CloseHandle(threadsCliente.hThreads[1]);
     _tprintf(TEXT("A sair..."));
     CloseHandle(hPipe);
+    //ReleaseSemaphore(hSemaphore, 1, NULL);
     return 0;
 }

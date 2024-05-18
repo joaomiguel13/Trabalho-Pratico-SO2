@@ -14,7 +14,6 @@
 
 #define PIPE_NAME_CLIENTS TEXT("\\\\.\\pipe\\pipeClientes")
 #define REGISTRY_PATH TEXT("SO2\\TrabalhoPratico\\")
-#define SHARED_MEMORY_NAME TEXT("sharedMemoryBolsa") 
 
 #define EMPRESAS_FILE TEXT("empresas.txt")
 
@@ -23,9 +22,12 @@
 #define MAX_TAM_BUFFER 1024
 #define DEFAULT_VALUE_NCLIENTES 5
 #define MAX_TAM 100
-#define MAX_USERS 20
+//#define MAX_USERS 20
 #define MAX_EMPRESAS 30
 #define Msg_Sz sizeof(utilizador)
+
+int MAX_USERS;
+
 
 typedef struct {
 	TCHAR empresa[20];
@@ -63,7 +65,7 @@ typedef struct {
 	Empresa empresas[MAX_EMPRESAS];
 	int numEmpresas; //contador de empresas
 	Transacoes lastTransacao;
-	User users[MAX_USERS];
+	User users[999];
 	HANDLE hPipe;
 
 	BOOL pausedBolsa;
@@ -72,8 +74,8 @@ typedef struct {
 
 typedef struct {
 	HANDLE hMapFile;
-	HANDLE hMutexUpdateBoard;
 	HANDLE hEventUpdateBoard;
+	HANDLE hMutexUpdateBoard;
 	HANDLE hEventRunning;
 
 	SharedData* sharedData;
@@ -89,7 +91,6 @@ typedef struct {
 #define N_THREADS_BOARD 2
 typedef struct {
 	HANDLE hThreads[N_THREADS_BOARD];
-	HANDLE hEventCloseAllThreads;
 }ThreadsBoard;
 
 typedef struct {
@@ -100,6 +101,6 @@ EventoLer eventoLer;
 #define N_THREADS_CLIENTE 2
 typedef struct {
 	HANDLE hThreads[N_THREADS_CLIENTE];
-	HANDLE hEventCloseAllThreads;
+
 	BOOL SAIR;
 }ThreadsCliente;

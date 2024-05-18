@@ -28,5 +28,3 @@ typedef struct {
 	BOOL BOLSA;
 }NovosUsers;
 NovosUsers utilizador;
-
-

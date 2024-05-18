@@ -77,6 +77,22 @@ BOOL initSharedMemory_Sync(SharedMemory* sharedMemory) {
 	return TRUE;
 }
 
+void writeRegistry(const TCHAR* keyName, DWORD value) {
+	HKEY hKey;
+
+	if (RegCreateKeyEx(HKEY_CURRENT_USER, REGISTRY_PATH, 0, NULL, REG_OPTION_NON_VOLATILE, KEY_WRITE, NULL, &hKey, NULL) == ERROR_SUCCESS) {
+		if (RegSetValueEx(hKey, keyName, 0, REG_DWORD, (LPBYTE)&value, sizeof(DWORD)) == ERROR_SUCCESS) {
+			_tprintf(TEXT("CHAVE ESCRITA COM SUCESSO!\n"));
+		}
+		else
+			_tprintf(TEXT("ERRO AO ESCREVER CHAVE!\n"));
+		RegCloseKey(hKey);
+	}
+	else {
+		_tprintf(_T("\nErro ao criar/abrir a chave do Registry! [%d]"), GetLastError());
+	}
+}
+
 DWORD readRegistry(const TCHAR* keyName) {
 	HKEY hKey;
 	DWORD value;
@@ -85,41 +101,29 @@ DWORD readRegistry(const TCHAR* keyName) {
 	if (RegOpenKeyEx(HKEY_CURRENT_USER, REGISTRY_PATH, 0, KEY_READ, &hKey) == ERROR_SUCCESS) {
 		if (RegQueryValueEx(hKey, keyName, NULL, NULL, (LPBYTE)&value, &size) == ERROR_SUCCESS) {
 			RegCloseKey(hKey);
+			_tprintf(_T("\nValor da chave do Registry lido com sucesso: %d!\n"), value);
 			return value;
 		}
 		else {
 			RegCloseKey(hKey);
-			_tprintf("\nErro ao ler o valor da chave do Registry! [%d]", GetLastError());
+			_tprintf(_T("\nErro ao ler o valor da chave do Registry! [%d]"), GetLastError());
 
-			if (keyName == "NCLIENTES")
+			if (keyName == "NCLIENTES") {
+				writeRegistry(keyName, DEFAULT_VALUE_NCLIENTES);
 				return DEFAULT_VALUE_NCLIENTES;
+				
+			}
 			else
-				_tprintf("\nChave invalida!");
+				_tprintf(_T("\nChave invalida!"));
 		}
 	}
 	else {
-		_tprintf("\nErro ao abrir a chave do Registry! [%d]", GetLastError());
+		_tprintf(_T("\nErro ao abrir a chave do Registry! [%d]"), GetLastError());
 
 		if (keyName == "NCLIENTES")
 			return DEFAULT_VALUE_NCLIENTES;
 		else
-			_tprintf("\nChave VAZIA!");
-	}
-}
-
-void writeRegistry(const TCHAR* keyName, DWORD value) {
-	HKEY hKey;
-
-	if (RegCreateKeyEx(HKEY_CURRENT_USER, REGISTRY_PATH, 0, NULL, REG_OPTION_NON_VOLATILE, KEY_WRITE, NULL, &hKey, NULL) == ERROR_SUCCESS) {
-		if (RegSetValueEx(hKey, keyName, 0, REG_DWORD, (LPBYTE)&value, sizeof(DWORD)) == ERROR_SUCCESS) {
-			//_tprintf(TEXT("CHAVE ESCRITA COM SUCESSO!\n"));
-		}
-		else
-			_tprintf(TEXT("ERRO AO ESCREVER CHAVE!\n"));
-		RegCloseKey(hKey);
-	}
-	else {
-		_tprintf("\nErro ao criar/abrir a chave do Registry! [%d]", GetLastError());
+			_tprintf(_T("\nChave VAZIA!"));
 	}
 }
 
@@ -494,9 +498,6 @@ DWORD WINAPI InstanciaThread(LPVOID lpParam) {
 				i++;
 			}
 		}
-		else if (utilizador.tipo == 6) {
-			//fecha a board
-		}
 		
 		updateInfo(sharedMemory);
 		WriteClienteASINC(hPipe);
@@ -536,7 +537,6 @@ int WriteClienteASINC(HANDLE hPipe) {
 BOOL WINAPI ConectarClientes(LPVOID lpParam) {
 	SharedMemory* sharedMemory = (SharedMemory*)lpParam;
 	HANDLE hPipe = sharedMemory->sharedData->hPipe;
-
 	BOOL fConnected = FALSE;
 	HANDLE hThread;
 	DWORD dwThreadID;
@@ -595,6 +595,9 @@ int _tmain(int argc, TCHAR* argv[]) {
 			exit(-1);
 		}
 	}
+
+	MAX_USERS = readRegistry(TEXT("NCLIENTES"));
+	_tprintf(TEXT("Numero maximo de clientes: %d\n"), MAX_USERS);
 
 	//ler o ficheiro e guardar os utilizadores
 	if (argv[1] != NULL) {

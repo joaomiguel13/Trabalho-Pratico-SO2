@@ -1,5 +1,4 @@
 #include "bolsa.h"
-#include "threads.h"
 
 //Verificar se já está uma bolsa em execução
 BOOL isBolsaRunning() {

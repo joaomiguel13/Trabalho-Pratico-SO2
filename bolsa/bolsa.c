@@ -401,8 +401,8 @@ DWORD WINAPI InstanciaThread(LPVOID lpParam) {
 							utilizador.Sucesso = TRUE;
 							// Guardar a última transação
 							wcscpy_s(sharedMemory->sharedData->lastTransacao.empresa.nome, _countof(sharedMemory->sharedData->lastTransacao.empresa.nome), utilizador.NomeEmpresa);
-							sharedMemory->sharedData->lastTransacao.numAcoes = sharedMemory->sharedData->empresas[n].acoesDisponiveis;
-							sharedMemory->sharedData->lastTransacao.precoAcoes = sharedMemory->sharedData->empresas[n].precoAcao;
+							sharedMemory->sharedData->lastTransacao.numAcoes = utilizador.qtAcoes;
+							sharedMemory->sharedData->lastTransacao.precoAcoes = sharedMemory->sharedData->empresas[n].precoAcao - ((utilizador.qtAcoes * sharedMemory->sharedData->empresas[n].acoesDisponiveis) * 0.1);
 
 							//----------------
 							break;
@@ -470,7 +470,7 @@ DWORD WINAPI InstanciaThread(LPVOID lpParam) {
 							utilizador.Sucesso = TRUE;
 							// Guardar a última transação
 							wcscpy_s(sharedMemory->sharedData->lastTransacao.empresa.nome, _countof(sharedMemory->sharedData->lastTransacao.empresa.nome), utilizador.NomeEmpresa);
-							sharedMemory->sharedData->lastTransacao.numAcoes = sharedMemory->sharedData->empresas[n].acoesDisponiveis;
+							sharedMemory->sharedData->lastTransacao.numAcoes = utilizador.qtAcoes;
 							sharedMemory->sharedData->lastTransacao.precoAcoes = sharedMemory->sharedData->empresas[n].precoAcao;
 							//----------------
 							break;

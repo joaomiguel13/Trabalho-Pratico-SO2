@@ -105,10 +105,10 @@ DWORD readRegistry(const TCHAR* keyName) {
 			return value;
 		}
 		else {
-			RegCloseKey(hKey);
+			RegCloseKey(hKey);	
 			_tprintf(_T("\nErro ao ler o valor da chave do Registry! [%d]"), GetLastError());
 
-			if (keyName == "NCLIENTES") {
+			if (_tcscmp(keyName,_T("NCLIENTES"))==0){
 				writeRegistry(keyName, DEFAULT_VALUE_NCLIENTES);
 				return DEFAULT_VALUE_NCLIENTES;
 				
@@ -120,8 +120,10 @@ DWORD readRegistry(const TCHAR* keyName) {
 	else {
 		_tprintf(_T("\nErro ao abrir a chave do Registry! [%d]"), GetLastError());
 
-		if (keyName == "NCLIENTES")
+		if (_tcscmp(keyName, _T("NCLIENTES")) == 0) {
+			writeRegistry(keyName, DEFAULT_VALUE_NCLIENTES);
 			return DEFAULT_VALUE_NCLIENTES;
+		}
 		else
 			_tprintf(_T("\nChave VAZIA!"));
 	}
